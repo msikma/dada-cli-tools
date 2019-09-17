@@ -6,8 +6,13 @@
   "homepage": "https://github.com/msikma/dada-cli-tools",
   "author": "Michiel Sikma <michiel@sikma.org>",
   "license": "MIT",
+  "scripts": {
+    "build": "babel --verbose --relative ./src/ -d ../lib",
+    "watch": "babel --watch --verbose --relative ./src/ -d ../lib"
+  },
   "files": [
     "src/",
+    "lib/",
     "license.md",
     "package.json",
     "readme.md",
@@ -22,29 +27,22 @@
     },
     "verbose": true
   },
-  "bin": {
-  },
+  "bin": {},
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.47",
     "@babel/core": "7.0.0-beta.47",
     "@babel/node": "7.0.0-beta.47",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
     "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "7.0.0-beta.47",
-    "babel-core": "^7.0.0-bridge.0",
-    "babel-eslint": "^8.2.6",
     "babel-jest": "^23.6.0",
-    "eslint": "^4.19.0",
-    "eslint-plugin-import": "^2.14.0",
     "jest": "^23.6.0",
-    "jest-cli": "^23.6.0",
-    "regenerator-runtime": "^0.12.0"
+    "jest-cli": "^23.6.0"
   },
   "dependencies": {
     "argparse": "^1.0.10",
-    "cheerio": "^1.0.0-rc.2",
     "file-cookie-store-sync": "^0.1.0",
-    "lodash": "^4.17.5",
-    "mkdirp": "^0.5.1",
-    "request": "^2.87.0"
+    "lodash-es": "^4.17.15",
+    "mkdirp": "^0.5.1"
   }
 }
