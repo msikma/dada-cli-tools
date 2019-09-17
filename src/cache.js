@@ -2,7 +2,7 @@
 // © MIT license
 
 import { dirname } from 'path'
-import { ensureDir } from './file'
+import { ensureDir } from './util/fs'
 import { writeFileAsync, readFileAsync, statAsync } from './promisified/fs'
 
 // Returns cached data from a given location. If the file exists and hasn't

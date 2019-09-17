@@ -1,4 +1,4 @@
-// buyee-js - Buyee Client Library <https://github.com/msikma/msikma-lib-projects>
+// dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
 import { objToParams, toFormURIComponent } from './query'

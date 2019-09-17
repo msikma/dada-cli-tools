@@ -1,8 +1,6 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-import { isArray } from 'lodash'
-
 /**
  * Converts an object of key/value pairs to URI parameters without leading question mark.
  * By default, we remove: null, empty strings and empty arrays.
@@ -18,11 +16,11 @@ export const objToParams = (obj, {
     (!removeNull || (removeNull && obj[k] != null)) &&
     (!removeEmptyString || (removeEmptyString && obj[k] !== '')) &&
     (!removeFalse || (removeFalse && obj[k] !== false)) &&
-    (!removeEmptyArray || (removeEmptyArray && (!isArray(obj[k]) || obj[k].length > 0))))
+    (!removeEmptyArray || (removeEmptyArray && (!Array.isArray(obj[k]) || obj[k].length > 0))))
   // Encode to URI components. Account for the zero-width array.
-  .map(k => isArray(obj[k]) && obj[k].length > 0
+  .map(k => Array.isArray(obj[k]) && obj[k].length > 0
     ? obj[k].map(i => `${encodeURIComponent(k)}[]=${encodeURIComponent(i)}`).join('&')
-    : `${encodeURIComponent(k)}${isArray(obj[k]) ? '[]' : ''}=${encodeURIComponent(obj[k])}`)
+    : `${encodeURIComponent(k)}${Array.isArray(obj[k]) ? '[]' : ''}=${encodeURIComponent(obj[k])}`)
   .join('&')
 
 /**
