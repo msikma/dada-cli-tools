@@ -6,24 +6,34 @@ import { existsSync } from 'fs'
 import FileCookieStore from 'file-cookie-store-sync'
 import makeDir from 'make-dir'
 
-import { log, die, dirName } from './utils'
+import { log, die } from './log'
+import { dirName } from './util/fs'
 
 /**
  * Loads cookies from a specified cookies.txt - and errors out, exiting the process
  * if something goes wrong. Used for CLI apps that cannot proceed without one.
  */
 export const loadCookiesLogged = async (cookiePath, createNew = false, failQuietly = false, canDie = true) => {
-  const res = await loadCookies(cookiePath, createNew, failQuietly)
-  console.log(res)
-  if (res.err) {
-    if (canDie) die(String(res.err))
-    else log(String(res.err))
+  try {
+    const res = await loadCookies(cookiePath, createNew, failQuietly)
+    if (res.err) {
+      if (canDie) die(String(res.err))
+      else log(String(res.err))
+    }
+    if (res.madeNew) {
+      log('Created new cookies file:', res.file)
+    }
+    if (res.file) {
+      log('Found cookies file:', res.file)
+    }
   }
-  if (res.madeNew) {
-    log('Created new cookies file:', cookiePath)
-  }
-  if (res.file) {
-    log('Found cookies file:', file)
+  catch (e) {
+    if (~String(e.error).indexOf('Could not find cookies file')) {
+      log('Could not find cookies file:', cookiePath)
+      return
+    }
+    log(String(e.error))
+    return
   }
 }
 
@@ -43,7 +53,7 @@ export const loadCookies = (cookiePath, createNew = false, failQuietly = false) 
           return resolve({})
         }
         if (!createNew) {
-          return reject({ err: new Error(`Could not find cookies file: ${cookiePath}`) })
+          return reject({ error: new Error(`Could not find cookies file: ${cookiePath}`) })
         }
         // Create the directory so we can make a new file.
         makeDir.sync(dirName(cookiePath))
@@ -54,8 +64,8 @@ export const loadCookies = (cookiePath, createNew = false, failQuietly = false) 
       const jar = new CookieJar(cookieStore)
       resolve({ jar, file: jar.store.file, madeNew })
     }
-    catch (err) {
-      reject({ err })
+    catch (error) {
+      reject({ error })
     }
   })
 )
