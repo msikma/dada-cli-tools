@@ -1,7 +1,7 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-import { fromPairs, sortBy, toPairs } from 'lodash-es'
+import { fromPairs, sortBy, toPairs } from 'lodash'
 
 /** Checks whether something is a string or not. */
 export const isString = (maybeString) => (
