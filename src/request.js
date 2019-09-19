@@ -18,7 +18,7 @@ const stdHeaders = {
 
 /**
  * Returns the attributes needed to make a POST request.
- * Should be merged into a Got request object.
+ * The output should be merged into a Got request object.
  */
 const postAttributes = (postData, { urlEncoded }) => {
   if (isEmpty(postData)) return {}
