@@ -3,9 +3,12 @@
 
 import fs from 'fs'
 import { dirname } from 'path'
+import { logDebug } from './utils'
 import { ensureDir } from './util/fs'
 import { writeFileAsync, readFileAsync, statAsync } from './promisified/fs'
 
+// Setting a base directory makes it easy to run the cache functions.
+// A good path is in ~/.cache/<directory> - the user level cache store.
 const settings = {
   baseDir: null,
   // 10 minutes in seconds.
@@ -38,8 +41,8 @@ const isFileStale = async (cachePath, validSeconds = settings.validSeconds) => {
 /** Simple check to see if a file exists. Returns a boolean. */
 const cacheFileExists = async (cachePath) => {
   try {
-    await fs.promises.access(cachePath)
-    return true
+    const exists = await fs.promises.access(cachePath)
+    return exists
   }
   catch (e) {
     return false
@@ -58,19 +61,24 @@ const cacheFileExists = async (cachePath) => {
  *
  * In most cases, the data will be JSON that needs to be parsed. By default this does so.
  */
-export const readCacheFile = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true) => {
+export const readCacheFile = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false) => {
   const path = withBaseDir(cachePath)
+  // If isSimple is true, it means we're not going to use the metadata. Only the file contents.
+  logDebug('Reading cache from file', isSimple ? '(no metadata)' : null, '- valid seconds', validSeconds, '- path', path)
   const exists = await cacheFileExists(path)
   if (!exists) {
+    logDebug('Cache file does not exist')
     return { exists, isStale: null, path, validSeconds, data: null }
   }
   const isStale = await isFileStale(path, validSeconds)
   if (isStale) {
+    logDebug('Cache file is stale')
     return { exists, isStale, path, validSeconds, data: null }
   }
 
   const dataRaw = await readFileAsync(path)
   const data = parseJSON ? JSON.parse(dataRaw) : dataRaw
+  logDebug('Cache read and parsed')
   return { exists, isStale, path, validSeconds, data }
 }
 
@@ -81,7 +89,7 @@ export const readCacheFile = async (cachePath, validSeconds = settings.validSeco
  * If there is no cache for some reason, this returns null.
  */
 export const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true) => {
-  const cache = await readCacheFile(cachePath, validSeconds, parseJSON)
+  const cache = await readCacheFile(cachePath, validSeconds, parseJSON, true)
   return cache.data
 }
 
@@ -93,14 +101,20 @@ export const readCache = async (cachePath, validSeconds = settings.validSeconds,
  */
 export const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8') => {
   const path = withBaseDir(cachePath)
+  logDebug('Writing cache to file', path)
 
   // Ensure the cache dir exists. TODO: need an error handler here
   if (makeDir) {
     const dir = dirname(path)
-    await ensureDir(dir)
+    const exists = await fs.promises.access(dir)
+    if (!exists) {
+      logDebug('Needed to make directory', dir)
+      await ensureDir(dir)
+    }
   }
 
   const data = toJSON ? JSON.stringify(dataRaw, null, cleanJSON ? 2 : null) : dataRaw
   const success = await writeFileAsync(path, data, encoding)
+  logDebug('Wrote cache to file', success)
   return success
 }

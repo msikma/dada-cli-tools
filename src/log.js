@@ -12,26 +12,23 @@ const verbosityLabels = {
   error: 8,
   warn: 6,
   info: 4,
-  verbose: 2,
   debug: 0,
   quiet: -1
 }
 
-// Contains the verbosity setting that determines how much gets logged.
-// The value should always be a number, with 0 meaning no logging.
+// By default we only show logs of priority 4 and up.
 const options = {
-  // Log 'info' and up by default.
-  verbose: verbosityLabels['info']
+  verbosity: verbosityLabels['info']
 }
 
 // Regex used to colorize certain log patterns.
 const HTTP_PROTOCOL = new RegExp('^\s?https?://')
 const ABS_REL_PATH = new RegExp('^\s?\.?/')
 
-/** Sets the desired logging verbosity. */
+/** Sets the desired logging verbosity. The value must be either a number or a string. */
 export const setVerbosity = (verbosity) => {
   if (isNumber(verbosity)) {
-    options.verbose = verbosity
+    options.verbosity = verbosity
     return
   }
   const vbNumber = verbosityLabels[verbosity]
@@ -39,17 +36,20 @@ export const setVerbosity = (verbosity) => {
   options.verbose = vbNumber
 }
 
-/** Logs strings and objects to the console. */
+/**
+ * Logs strings and objects to the console.
+ *
+ * Takes an array of segments to log, which will be separated by a space just
+ * like the regular console.log(). Strings are colorized if they conform to a URL
+ * or a filesystem path. Everything else is inspected and colorized.
+ */
 const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null) => {
   const str = segments.filter(s => s).map((s, n) => {
     // Add spaces between items, except after a linebreak.
     const space = (n !== segments.length - 1 && !String(segments[n]).endsWith('\n') ? ' ' : '')
     if (isString(s)) {
-      // Colorize URLs.
-      if (colorize) {
-        if (HTTP_PROTOCOL.test(s) || ABS_REL_PATH.test(s)) {
-          s = chalk.green(s)
-        }
+      if (colorize && (HTTP_PROTOCOL.test(s) || ABS_REL_PATH.test(s))) {
+        s = chalk.green(s)
       }
       return s + space
     }
@@ -60,23 +60,19 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
   logFn(colorAll ? colorAll(str) : str)
 }
 
-/** Logs a line of text with standard verbosity (0). */
-export const log = (...segments) => {
-  if (options.verbosity < 0) return
-  logSegments(segments)
-}
-
-/**
- * Logs a line of text with a given verbosity value.
- * The higher the verbosity value, the less critical the log is.
- */
-export const logVerbose = (verbosity, segments) => {
-  if (!isNumber(verbosity) || !Array.isArray(segments)) {
-    throw new Error('logVerbose() must be called with interface: verbosity:Number, segments:Array')
-  }
+/** Logs a line of text with a given verbosity (as a number). */
+const logVerbose = (verbosity) => (...segments) => {
+  // Ignore if the global verbosity value is lower than this.
   if (options.verbosity < verbosity) return
   logSegments(segments)
 }
+
+/** Create log functions for each verbosity. */
+export const logError = logVerbose(verbosityLabels['error'])
+export const logWarn = logVerbose(verbosityLabels['warn'])
+export const logInfo = logVerbose(verbosityLabels['info'])
+export const logDebug = logVerbose(verbosityLabels['debug'])
+export const log = logInfo
 
 /** Exits the program with an error. */
 export const die = (...segments) => {
