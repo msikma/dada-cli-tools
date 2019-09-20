@@ -10,14 +10,6 @@
     "build": "babel --verbose --relative ./src/ -d ../lib",
     "watch": "babel --watch --verbose --relative ./src/ -d ../lib"
   },
-  "files": [
-    "src/",
-    "lib/",
-    "license.md",
-    "package.json",
-    "readme.md",
-    "yarn.lock"
-  ],
   "jest": {
     "testPathIgnorePatterns": [
       "<rootDir>/lib/"
