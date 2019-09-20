@@ -1,7 +1,6 @@
 # Development files.
 _source
 todo.md
-lib/
 
 # General
 *.DS_Store
