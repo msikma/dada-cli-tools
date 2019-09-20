@@ -2,7 +2,6 @@
   "name": "dada-cli-tools",
   "version": "0.0.1",
   "description": "Libraries for quickly building command line interfaces",
-  "private": true,
   "homepage": "https://github.com/msikma/dada-cli-tools",
   "author": "Michiel Sikma <michiel@sikma.org>",
   "license": "MIT",
