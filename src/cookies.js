@@ -4,10 +4,9 @@
 import { CookieJar } from 'tough-cookie'
 import { existsSync } from 'fs'
 import FileCookieStore from 'file-cookie-store-sync'
-import makeDir from 'make-dir'
 
 import { log, die } from './log'
-import { dirName } from './util/fs'
+import { dirName, ensureDir } from './util/fs'
 
 /**
  * Loads cookies from a specified cookies.txt - and errors out, exiting the process
@@ -42,7 +41,7 @@ export const loadCookiesLogged = async (cookiePath, createNew = false, failQuiet
  * a jar so that we can make requests with them.
  */
 export const loadCookies = (cookiePath, createNew = false, failQuietly = false) => (
-  new Promise((resolve, reject) => {
+  new Promise(async (resolve, reject) => {
     try {
       let madeNew = false
 
@@ -56,7 +55,7 @@ export const loadCookies = (cookiePath, createNew = false, failQuietly = false) 
           return reject({ error: new Error(`Could not find cookies file: ${cookiePath}`) })
         }
         // Create the directory so we can make a new file.
-        makeDir.sync(dirName(cookiePath))
+        await ensureDir(dirName(cookiePath))
         madeNew = true
       }
       // Cookies must be in Netscape cookie file format.
