@@ -5,6 +5,7 @@
   "homepage": "https://github.com/msikma/dada-cli-tools",
   "author": "Michiel Sikma <michiel@sikma.org>",
   "license": "MIT",
+  "main": "lib/index.js",
   "scripts": {
     "build": "babel --verbose --relative ./src/ -d ../lib",
     "watch": "babel --watch --verbose --relative ./src/ -d ../lib"
