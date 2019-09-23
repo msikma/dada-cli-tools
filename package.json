@@ -1,6 +1,6 @@
 {
   "name": "dada-cli-tools",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Libraries for quickly building command line interfaces",
   "homepage": "https://github.com/msikma/dada-cli-tools",
   "author": "Michiel Sikma <michiel@sikma.org>",
