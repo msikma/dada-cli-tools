@@ -3,6 +3,7 @@
 
 import fs from 'fs'
 import { dirname } from 'path'
+import { partialRight } from 'lodash'
 import { logDebug } from './utils'
 import { ensureDir } from './util/fs'
 import { writeFileAsync, readFileAsync, statAsync } from './promisified/fs'
@@ -61,35 +62,35 @@ const cacheFileExists = async (cachePath) => {
  *
  * In most cases, the data will be JSON that needs to be parsed. By default this does so.
  */
-export const readCacheFile = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false) => {
+export const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false, doLogging = false) => {
   const path = withBaseDir(cachePath)
   // If isSimple is true, it means we're not going to use the metadata. Only the file contents.
-  logDebug('Reading cache from file', isSimple ? '(no metadata)' : null, '- valid seconds', validSeconds, '- path', path)
+  doLogging && logDebug('Reading cache from file', isSimple ? '(no metadata)' : null, '- valid seconds', validSeconds, '- path', path)
   const exists = await cacheFileExists(path)
   if (!exists) {
-    logDebug('Cache file does not exist')
+    doLogging && logDebug('Cache file does not exist')
     return { exists, isStale: null, path, validSeconds, data: null }
   }
   const isStale = await isFileStale(path, validSeconds)
   if (isStale) {
-    logDebug('Cache file is stale')
+    doLogging && logDebug('Cache file is stale')
     return { exists, isStale, path, validSeconds, data: null }
   }
 
   const dataRaw = await readFileAsync(path)
   const data = parseJSON ? JSON.parse(dataRaw) : dataRaw
-  logDebug('Cache read and parsed')
+  doLogging && logDebug('Cache read and parsed')
   return { exists, isStale, path, validSeconds, data }
 }
 
 /**
  * Basic cache reading function.
  *
- * Unlike readCacheFile(), this only returns the actual file data without the metadata.
+ * Unlike readCache(), this only returns the actual file data without the metadata.
  * If there is no cache for some reason, this returns null.
  */
-export const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true) => {
-  const cache = await readCacheFile(cachePath, validSeconds, parseJSON, true)
+export const readCacheData = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, doLogging = false) => {
+  const cache = await readCache(cachePath, validSeconds, parseJSON, true, doLogging)
   return cache.data
 }
 
@@ -99,22 +100,31 @@ export const readCache = async (cachePath, validSeconds = settings.validSeconds,
  * By default this will create a new directory if it doesn't exist.
  * Returns a boolean as result.
  */
-export const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8') => {
+export const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8', doLogging = false) => {
   const path = withBaseDir(cachePath)
-  logDebug('Writing cache to file', path)
+  doLogging && logDebug('Writing cache to file', path)
 
   // Ensure the cache dir exists. TODO: need an error handler here
   if (makeDir) {
     const dir = dirname(path)
     const exists = await fs.promises.access(dir)
     if (!exists) {
-      logDebug('Needed to make directory', dir)
+      doLogging && logDebug('Needed to make directory', dir)
       await ensureDir(dir)
     }
   }
 
   const data = toJSON ? JSON.stringify(dataRaw, null, cleanJSON ? 2 : null) : dataRaw
   const success = await writeFileAsync(path, data, encoding)
-  logDebug('Wrote cache to file', success)
+  doLogging && logDebug('Wrote cache to file', success)
   return success
 }
+
+/** Call readCache() with doLogging = true. */
+export const readCacheLogged = partialRight(readCache, true)
+
+/** Call writeCache() with doLogging = true. */
+export const writeCacheLogged = partialRight(writeCache, true)
+
+/** Call readCacheData() with doLogging = true. */
+export const readCacheDataLogged = partialRight(readCacheData, true)
