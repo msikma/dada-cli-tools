@@ -4,9 +4,9 @@
 import fs from 'fs'
 import { dirname } from 'path'
 import { partialRight } from 'lodash'
-import { logDebug } from './utils'
+
+import { logDebug } from './log'
 import { ensureDir } from './util/fs'
-import { writeFileAsync, readFileAsync, statAsync } from './promisified/fs'
 
 // Setting a base directory makes it easy to run the cache functions.
 // A good path is in ~/.cache/<directory> - the user level cache store.
@@ -34,9 +34,9 @@ const withBaseDir = path => {
 /** Checks to see if a file has gone stale. */
 const isFileStale = async (cachePath, validSeconds = settings.validSeconds) => {
   const curr = (+new Date())
-  const stat = await statAsync(cachePath)
+  const statData = await fs.promises.stat(cachePath)
   // Convert seconds to ms to compare it with stat.
-  return (curr - (validSeconds * 1000)) > stat.mtimeMs
+  return (curr - (validSeconds * 1000)) > statData.mtimeMs
 }
 
 /** Simple check to see if a file exists. Returns a boolean. */
@@ -77,7 +77,7 @@ export const readCache = async (cachePath, validSeconds = settings.validSeconds,
     return { exists, isStale, path, validSeconds, data: null }
   }
 
-  const dataRaw = await readFileAsync(path)
+  const dataRaw = await fs.promises.readFile(path)
   const data = parseJSON ? JSON.parse(dataRaw) : dataRaw
   doLogging && logDebug('Cache read and parsed')
   return { exists, isStale, path, validSeconds, data }
@@ -115,7 +115,7 @@ export const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = tr
   }
 
   const data = toJSON ? JSON.stringify(dataRaw, null, cleanJSON ? 2 : null) : dataRaw
-  const success = await writeFileAsync(path, data, encoding)
+  const success = await fs.promises.writeFile(path, data, encoding)
   doLogging && logDebug('Wrote cache to file', success)
   return success
 }

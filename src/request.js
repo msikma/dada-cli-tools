@@ -2,7 +2,9 @@
 // © MIT license
 
 import got from 'got'
-import { log, isEmpty } from './utils'
+import { isEmpty } from 'lodash'
+
+import { logDebug } from './log'
 
 // Headers sent by default, similar to what a regular browser would send.
 const stdHeaders = {
@@ -37,7 +39,7 @@ const postAttributes = (postData, { urlEncoded }) => {
  * Wrapper for request() that adds the standard logger for CLI purposes.
  */
 export const requestLogged = (url, opts) => {
-  return request(url, { ...opts, logFn: log })
+  return request(url, { ...opts, logFn: logDebug })
 }
 
 /**

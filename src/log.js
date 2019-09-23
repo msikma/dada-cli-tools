@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import { inspect } from 'util'
 import { isNumber, isString } from 'lodash'
 
-import { progName } from './util'
+import { progName } from './util/fs'
 
 // Shortcut labels used to describe various verbosity levels.
 const verbosityLabels = {

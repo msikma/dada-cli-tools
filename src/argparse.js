@@ -4,7 +4,7 @@
 import { ArgumentParser } from 'argparse'
 import HelpFormatter from 'argparse/lib/help/formatter'
 
-import { removeUnnecessaryLines } from './text'
+import { removeUnnecessaryLines } from './util/text'
 
 // A simple wrapper for the ArgumentParser library. Adds support for an extra help paragraph,
 // and the ability to add multiple sections. This is useful for grouping certain options together.
