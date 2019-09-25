@@ -6,12 +6,12 @@ import { dirname } from 'path'
 import { partialRight } from 'lodash'
 
 import { logDebug } from './log'
-import { ensureDir } from './util/fs'
+import { ensureDir, resolveTilde } from './util/fs'
 
 // Setting a base directory makes it easy to run the cache functions.
 // A good path is in ~/.cache/<directory> - the user level cache store.
 const settings = {
-  baseDir: null,
+  baseDir: resolveTilde('~/.cache/'),
   // 10 minutes in seconds.
   validSeconds: 600
 }

@@ -6,7 +6,7 @@ import { existsSync } from 'fs'
 import FileCookieStore from 'file-cookie-store-sync'
 
 import { log, die } from './log'
-import { dirName, ensureDir } from './util/fs'
+import { dirName, ensureDir, resolveTilde } from './util/fs'
 
 /**
  * Loads cookies from a specified cookies.txt - and errors out, exiting the process
@@ -68,3 +68,17 @@ export const loadCookies = (cookiePath, createNew = false, failQuietly = false) 
     }
   })
 )
+
+/**
+ * Shorthand for loadCookiesLogged() using ~/.cache/<name> as the file path.
+ */
+export const loadCookiesLoggedFromCache = (afterCachePath, createNew = false, failQuietly = false, canDie = true) => {
+  return loadCookiesLogged(resolveTilde(`~/.cache/${afterCachePath}`), createNew, failQuietly, canDie)
+}
+
+/**
+ * Shorthand for loadCookies() using ~/.cache/<name> as the file path.
+ */
+export const loadCookiesFromCache = (afterCachePath, createNew = false, failQuietly = false) => {
+  return loadCookies(resolveTilde(`~/.cache/${afterCachePath}`), createNew, failQuietly)
+}

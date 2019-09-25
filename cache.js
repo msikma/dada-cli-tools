@@ -22,7 +22,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Setting a base directory makes it easy to run the cache functions.
 // A good path is in ~/.cache/<directory> - the user level cache store.
 const settings = {
-  baseDir: null,
+  baseDir: (0, _fs2.resolveTilde)('~/.cache/'),
   // 10 minutes in seconds.
   validSeconds: 600
   /** Sets the base directory used for cache filenames. */

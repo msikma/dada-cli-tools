@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.loadCookies = exports.loadCookiesLogged = void 0;
+exports.loadCookiesFromCache = exports.loadCookiesLoggedFromCache = exports.loadCookies = exports.loadCookiesLogged = void 0;
 
 var _toughCookie = require("tough-cookie");
 
@@ -94,5 +94,25 @@ const loadCookies = (cookiePath, createNew = false, failQuietly = false) => new 
     });
   }
 });
+/**
+ * Shorthand for loadCookiesLogged() using ~/.cache/<name> as the file path.
+ */
+
 
 exports.loadCookies = loadCookies;
+
+const loadCookiesLoggedFromCache = (afterCachePath, createNew = false, failQuietly = false, canDie = true) => {
+  return loadCookiesLogged((0, _fs2.resolveTilde)(`~/.cache/${afterCachePath}`), createNew, failQuietly, canDie);
+};
+/**
+ * Shorthand for loadCookies() using ~/.cache/<name> as the file path.
+ */
+
+
+exports.loadCookiesLoggedFromCache = loadCookiesLoggedFromCache;
+
+const loadCookiesFromCache = (afterCachePath, createNew = false, failQuietly = false) => {
+  return loadCookies((0, _fs2.resolveTilde)(`~/.cache/${afterCachePath}`), createNew, failQuietly);
+};
+
+exports.loadCookiesFromCache = loadCookiesFromCache;
