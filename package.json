@@ -1,14 +1,14 @@
 {
   "name": "dada-cli-tools",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Libraries for quickly building command line interfaces",
   "homepage": "https://github.com/msikma/dada-cli-tools",
   "author": "Michiel Sikma <michiel@sikma.org>",
   "license": "MIT",
   "main": "lib/index.js",
   "scripts": {
-    "build": "babel --verbose --relative ./src/ -d ../lib",
-    "watch": "babel --watch --verbose --relative ./src/ -d ../lib"
+    "build": "babel --verbose --relative ./src/ -d ..",
+    "watch": "babel --watch --verbose --relative ./src/ -d .."
   },
   "jest": {
     "testPathIgnorePatterns": [
