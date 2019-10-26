@@ -65,13 +65,14 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
 }
 
 /** Logs a line of text with a given verbosity (as a number). */
-const logVerbose = (verbosity) => (...segments) => {
+const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null) => (...segments) => {
   // Ignore if the global verbosity value is lower than this.
   if (options.verbosity < verbosity) return
-  logSegments(segments)
+  logSegments(segments, logFn, colorize, colorAll)
 }
 
 /** Create log functions for each verbosity. */
+export const logErrorFatal = logVerbose(verbosityLabels['error'], console.error, false, chalk.red)
 export const logError = logVerbose(verbosityLabels['error'])
 export const logWarn = logVerbose(verbosityLabels['warn'])
 export const logInfo = logVerbose(verbosityLabels['info'])
@@ -80,6 +81,8 @@ export const log = logInfo
 
 /** Exits the program with an error. */
 export const die = (...segments) => {
-  logSegments([`${progName()}:`, ...segments], console.error, false, chalk.red)
+  if (segments.length) {
+    logSegments([`${progName()}:`, ...segments], console.error, false, chalk.red)
+  }
   process.exit(1)
 }
