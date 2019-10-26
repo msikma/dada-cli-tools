@@ -92,7 +92,8 @@ const makeArgParser = opts => {
       });
 
       _defineProperty(this, "longestArgument", args => {
-        return args.reduce((l, o) => o.length > l.length ? o : l, '');
+        const argsArr = Array.isArray(args) ? args : [args];
+        return argsArr.reduce((l, o) => o.length > l.length ? o : l, '');
       });
 
       _defineProperty(this, "_formatHelp", () => {

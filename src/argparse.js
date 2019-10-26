@@ -82,12 +82,15 @@ export const makeArgParser = (opts) => {
       }
     }
 
+    // Checks whether a line contains a specific argument.
     hasArgument = (arg, line) => {
       return new RegExp(`[^\[]${arg}([^\s]|$)`).test(line)
     }
 
+    // Checks what the longest argument (e.g. '--help', '-h') is for an item.
     longestArgument = (args) => {
-      return args.reduce((l, o) => (o.length > l.length ? o : l), '')
+      const argsArr = Array.isArray(args) ? args : [args]
+      return argsArr.reduce((l, o) => (o.length > l.length ? o : l), '')
     }
 
     // Replaces ArgumentParser's usual help formatter with one that supports multiple sections.
