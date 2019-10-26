@@ -9,7 +9,7 @@ import { removeUnnecessaryLines } from './util/text'
 // A simple wrapper for the ArgumentParser library. Adds support for an extra help paragraph,
 // and the ability to add multiple sections. This is useful for grouping certain options together.
 // Original library: <https://github.com/nodeca/argparse>
-const makeArgParser = (opts) => {
+export const makeArgParser = (opts) => {
   return new class ArgumentParserWrapper {
     constructor() {
       // List of extra multiple choice items we'll print.
