@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.text = exports.query = exports.output = exports.misc = exports.fs = void 0;
+exports.text = exports.read = exports.query = exports.output = exports.misc = exports.fs = void 0;
 
 var fs = _interopRequireWildcard(require("./fs"));
 
@@ -20,6 +20,10 @@ exports.output = output;
 var query = _interopRequireWildcard(require("./query"));
 
 exports.query = query;
+
+var read = _interopRequireWildcard(require("./read"));
+
+exports.read = read;
 
 var text = _interopRequireWildcard(require("./text"));
 
