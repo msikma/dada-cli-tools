@@ -3,107 +3,26 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-Object.defineProperty(exports, "dirName", {
-  enumerable: true,
-  get: function () {
-    return _fs.dirName;
-  }
-});
-Object.defineProperty(exports, "ensureDir", {
-  enumerable: true,
-  get: function () {
-    return _fs.ensureDir;
-  }
-});
-Object.defineProperty(exports, "progName", {
-  enumerable: true,
-  get: function () {
-    return _fs.progName;
-  }
-});
-Object.defineProperty(exports, "resolveTilde", {
-  enumerable: true,
-  get: function () {
-    return _fs.resolveTilde;
-  }
-});
-Object.defineProperty(exports, "sortByKeys", {
-  enumerable: true,
-  get: function () {
-    return _misc.sortByKeys;
-  }
-});
-Object.defineProperty(exports, "wait", {
-  enumerable: true,
-  get: function () {
-    return _misc.wait;
-  }
-});
-Object.defineProperty(exports, "objToParams", {
-  enumerable: true,
-  get: function () {
-    return _query.objToParams;
-  }
-});
-Object.defineProperty(exports, "toFormURIComponent", {
-  enumerable: true,
-  get: function () {
-    return _query.toFormURIComponent;
-  }
-});
-Object.defineProperty(exports, "removeQuery", {
-  enumerable: true,
-  get: function () {
-    return _query.removeQuery;
-  }
-});
-Object.defineProperty(exports, "blockElsToLb", {
-  enumerable: true,
-  get: function () {
-    return _text.blockElsToLb;
-  }
-});
-Object.defineProperty(exports, "charTrim", {
-  enumerable: true,
-  get: function () {
-    return _text.charTrim;
-  }
-});
-Object.defineProperty(exports, "ensurePeriod", {
-  enumerable: true,
-  get: function () {
-    return _text.ensurePeriod;
-  }
-});
-Object.defineProperty(exports, "removeEmptyLines", {
-  enumerable: true,
-  get: function () {
-    return _text.removeEmptyLines;
-  }
-});
-Object.defineProperty(exports, "removeUnnecessaryLines", {
-  enumerable: true,
-  get: function () {
-    return _text.removeUnnecessaryLines;
-  }
-});
-Object.defineProperty(exports, "splitOnLast", {
-  enumerable: true,
-  get: function () {
-    return _text.splitOnLast;
-  }
-});
-Object.defineProperty(exports, "trimInner", {
-  enumerable: true,
-  get: function () {
-    return _text.trimInner;
-  }
-});
+exports.text = exports.query = exports.output = exports.misc = exports.fs = void 0;
 
-var _fs = require("./fs");
+var fs = _interopRequireWildcard(require("./fs"));
 
-var _misc = require("./misc");
+exports.fs = fs;
 
-var _query = require("./query");
+var misc = _interopRequireWildcard(require("./misc"));
 
-var _text = require("./text");
+exports.misc = misc;
+
+var output = _interopRequireWildcard(require("./output"));
+
+exports.output = output;
+
+var query = _interopRequireWildcard(require("./query"));
+
+exports.query = query;
+
+var text = _interopRequireWildcard(require("./text"));
+
+exports.text = text;
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }

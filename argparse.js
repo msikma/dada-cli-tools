@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = exports.makeArgParser = void 0;
 
 var _argparse = require("argparse");
 
@@ -151,5 +151,6 @@ const makeArgParser = opts => {
   }, _temp)();
 };
 
+exports.makeArgParser = makeArgParser;
 var _default = makeArgParser;
 exports.default = _default;
