@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.die = exports.log = exports.logDebug = exports.logInfo = exports.logWarn = exports.logError = exports.setVerbosity = void 0;
+exports.die = exports.log = exports.logDebug = exports.logInfo = exports.logWarn = exports.logError = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
@@ -17,7 +17,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
-// Shortcut labels used to describe various verbosity levels.
+// Supported log levels and default. Can be used in e.g. CLI --help output.
+const logLevels = ['error', 'warn', 'info', 'debug'];
+exports.logLevels = logLevels;
+const logDefaultLevel = 'info'; // Shortcut labels used to describe various verbosity levels.
+
+exports.logDefaultLevel = logDefaultLevel;
 const verbosityLabels = {
   error: 8,
   warn: 6,
@@ -27,7 +32,7 @@ const verbosityLabels = {
 
 };
 const options = {
-  verbosity: verbosityLabels['info'] // Regex used to colorize certain log patterns.
+  verbosity: verbosityLabels[logDefaultLevel] // Regex used to colorize certain log patterns.
 
 };
 const HTTP_PROTOCOL = new RegExp('^\s?https?://');

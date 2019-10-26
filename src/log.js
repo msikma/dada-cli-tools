@@ -7,6 +7,10 @@ import { isNumber, isString } from 'lodash'
 
 import { progName } from './util/fs'
 
+// Supported log levels and default. Can be used in e.g. CLI --help output.
+export const logLevels = ['error', 'warn', 'info', 'debug']
+export const logDefaultLevel = 'info'
+
 // Shortcut labels used to describe various verbosity levels.
 const verbosityLabels = {
   error: 8,
@@ -18,7 +22,7 @@ const verbosityLabels = {
 
 // By default we only show logs of priority 4 and up.
 const options = {
-  verbosity: verbosityLabels['info']
+  verbosity: verbosityLabels[logDefaultLevel]
 }
 
 // Regex used to colorize certain log patterns.
