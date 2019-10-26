@@ -5,6 +5,7 @@ import * as fs from './fs'
 import * as misc from './misc'
 import * as output from './output'
 import * as query from './query'
+import * as read from './read'
 import * as text from './text'
 
 export {
@@ -12,5 +13,6 @@ export {
   misc,
   output,
   query,
+  read,
   text
 }
