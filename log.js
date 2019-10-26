@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.die = exports.log = exports.logDebug = exports.logInfo = exports.logWarn = exports.logError = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
+exports.die = exports.log = exports.logDebug = exports.logInfo = exports.logWarn = exports.logError = exports.logErrorFatal = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
@@ -84,14 +84,16 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
 /** Logs a line of text with a given verbosity (as a number). */
 
 
-const logVerbose = verbosity => (...segments) => {
+const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null) => (...segments) => {
   // Ignore if the global verbosity value is lower than this.
   if (options.verbosity < verbosity) return;
-  logSegments(segments);
+  logSegments(segments, logFn, colorize, colorAll);
 };
 /** Create log functions for each verbosity. */
 
 
+const logErrorFatal = logVerbose(verbosityLabels['error'], console.error, false, _chalk.default.red);
+exports.logErrorFatal = logErrorFatal;
 const logError = logVerbose(verbosityLabels['error']);
 exports.logError = logError;
 const logWarn = logVerbose(verbosityLabels['warn']);
@@ -106,7 +108,10 @@ const log = logInfo;
 exports.log = log;
 
 const die = (...segments) => {
-  logSegments([`${(0, _fs.progName)()}:`, ...segments], console.error, false, _chalk.default.red);
+  if (segments.length) {
+    logSegments([`${(0, _fs.progName)()}:`, ...segments], console.error, false, _chalk.default.red);
+  }
+
   process.exit(1);
 };
 
