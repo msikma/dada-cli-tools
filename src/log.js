@@ -67,7 +67,7 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
 /** Logs a line of text with a given verbosity (as a number). */
 const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null) => (...segments) => {
   // Ignore if the global verbosity value is lower than this.
-  if (options.verbosity < verbosity) return
+  if (options.verbosity > verbosity) return
   logSegments(segments, logFn, colorize, colorAll)
 }
 
