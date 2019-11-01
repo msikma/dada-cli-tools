@@ -51,6 +51,6 @@ const dirName = path => {
 
 exports.dirName = dirName;
 
-const progName = () => basename(_process.default.argv[1]);
+const progName = () => (0, _path.basename)(_process.default.argv[1]);
 
 exports.progName = progName;

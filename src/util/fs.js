@@ -2,7 +2,7 @@
 // © MIT license
 
 import { homedir } from 'os'
-import { parse } from 'path'
+import { parse, basename } from 'path'
 import mkdirp from 'mkdirp'
 import process from 'process'
 
