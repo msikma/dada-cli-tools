@@ -1,6 +1,7 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
+import { promises as fs, constants } from 'fs'
 import { homedir } from 'os'
 import { parse, basename } from 'path'
 import mkdirp from 'mkdirp'
@@ -14,6 +15,17 @@ export const resolveTilde = (pathStr) => {
     path = homedir() + path.slice(1)
   }
   return path
+}
+
+/** Checks whether we can access (read, modify) a path. */
+export const canAccess = async (path) => {
+  try {
+    // If access is possible, this will return null. Failure will throw.
+    return await fs.access(path, constants.F_OK | constants.W_OK) == null
+  }
+  catch (err) {
+    return false
+  }
 }
 
 /** Ensures that a directory exists. Returns a promise. */

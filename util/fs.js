@@ -3,7 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.ensureDir = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.ensureDir = exports.canAccess = exports.resolveTilde = void 0;
+
+var _fs = require("fs");
 
 var _os = require("os");
 
@@ -28,10 +30,23 @@ const resolveTilde = pathStr => {
 
   return path;
 };
-/** Ensures that a directory exists. Returns a promise. */
+/** Checks whether we can access (read, modify) a path. */
 
 
 exports.resolveTilde = resolveTilde;
+
+const canAccess = async path => {
+  try {
+    // If access is possible, this will return null. Failure will throw.
+    return (await _fs.promises.access(path, _fs.constants.F_OK | _fs.constants.W_OK)) == null;
+  } catch (err) {
+    return false;
+  }
+};
+/** Ensures that a directory exists. Returns a promise. */
+
+
+exports.canAccess = canAccess;
 
 const ensureDir = path => new Promise((resolve, reject) => (0, _mkdirp.default)(path, err => {
   if (err) return reject(err);
