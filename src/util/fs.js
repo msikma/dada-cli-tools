@@ -28,6 +28,16 @@ export const canAccess = async (path) => {
   }
 }
 
+/** Checks whether we can access (read) a file. As canAccess(). */
+export const fileExists = async (path) => {
+  try {
+    return await fs.access(path, constants.F_OK) == null
+  }
+  catch (err) {
+    return false
+  }
+}
+
 /** Ensures that a directory exists. Returns a promise. */
 export const ensureDir = (path) => new Promise((resolve, reject) => (
   mkdirp(path, (err) => {

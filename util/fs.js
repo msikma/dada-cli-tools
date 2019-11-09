@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.ensureDir = exports.canAccess = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.ensureDir = exports.fileExists = exports.canAccess = exports.resolveTilde = void 0;
 
 var _fs = require("fs");
 
@@ -43,10 +43,22 @@ const canAccess = async path => {
     return false;
   }
 };
-/** Ensures that a directory exists. Returns a promise. */
+/** Checks whether we can access (read) a file. As canAccess(). */
 
 
 exports.canAccess = canAccess;
+
+const fileExists = async path => {
+  try {
+    return (await _fs.promises.access(path, _fs.constants.F_OK)) == null;
+  } catch (err) {
+    return false;
+  }
+};
+/** Ensures that a directory exists. Returns a promise. */
+
+
+exports.fileExists = fileExists;
 
 const ensureDir = path => new Promise((resolve, reject) => (0, _mkdirp.default)(path, err => {
   if (err) return reject(err);
