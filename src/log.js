@@ -44,20 +44,33 @@ export const setVerbosity = (verbosity) => {
  * Logs strings and objects to the console.
  *
  * Takes an array of segments to log, which will be separated by a space just
- * like the regular console.log(). Strings are colorized if they conform to a URL
- * or a filesystem path. Everything else is inspected and colorized.
+ * like the regular console.log().
+ * 
+ * In some cases, strings are colorized: such as if a string is a URL or a path.
+ * 
+ * The 'colorAll' function is used to colorize everything to a specific color,
+ * and 'colorRegular' is used to colorize all strings that aren't already being
+ * colorized for any of the aforementioned cases.
  */
-const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null) => {
+const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null, colorRegular = null) => {
   const str = segments.filter(s => s).map((s, n) => {
     // Add spaces between items, except after a linebreak.
     const space = (n !== segments.length - 1 && !String(segments[n]).endsWith('\n') ? ' ' : '')
+
+    // Regular strings are colorized and logged directly.
     if (isString(s)) {
+      // If this string conforms to a specific type (URL or path), colorize it green.
       if (colorize && (HTTP_PROTOCOL.test(s) || ABS_REL_PATH.test(s))) {
         s = chalk.green(s)
       }
+      // Colorize regular strings if they don't conform to any specific type.
+      else if (colorRegular) {
+        s = colorRegular(s)
+      }
       return s + space
     }
-    // Inspect non-string objects.
+
+    // Non-string objects are inspected.
     return inspect(s, { colors: true, depth: 4 }) + space
   }).join('')
 
@@ -65,17 +78,18 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
 }
 
 /** Logs a line of text with a given verbosity (as a number). */
-const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null) => (...segments) => {
+const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null, colorRegular = null) => (...segments) => {
   // Ignore if the global verbosity value is lower than this.
   if (options.verbosity > verbosity) return
-  logSegments(segments, logFn, colorize, colorAll)
+  logSegments(segments, logFn, colorize, colorAll, colorRegular)
 }
 
 /** Create log functions for each verbosity. */
-export const logErrorFatal = logVerbose(verbosityLabels['error'], console.error, false, chalk.red)
+export const logFatal = logVerbose(verbosityLabels['error'], console.error, false, chalk.red)
 export const logError = logVerbose(verbosityLabels['error'])
 export const logWarn = logVerbose(verbosityLabels['warn'])
-export const logInfo = logVerbose(verbosityLabels['info'])
+export const logNotice = logVerbose(verbosityLabels['info'], console.log, false, chalk.blue)
+export const logInfo = logVerbose(verbosityLabels['info']) // the 'regular' log function
 export const logDebug = logVerbose(verbosityLabels['debug'])
 export const log = logInfo
 
