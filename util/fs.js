@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.ensureDir = exports.fileExists = exports.canAccess = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.resolveTilde = void 0;
 
 var _fs = require("fs");
 
@@ -64,10 +64,23 @@ const ensureDir = path => new Promise((resolve, reject) => (0, _mkdirp.default)(
   if (err) return reject(err);
   return resolve(true);
 }));
-/** Returns the directory name for a full path. */
+/** Ensures that a directory exists. Returns a promise resolving to a boolean. */
 
 
 exports.ensureDir = ensureDir;
+
+const ensureDirBool = async path => {
+  try {
+    await ensureDir(path);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+/** Returns the directory name for a full path. */
+
+
+exports.ensureDirBool = ensureDirBool;
 
 const dirName = path => {
   const info = (0, _path.parse)(path);

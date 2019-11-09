@@ -46,6 +46,17 @@ export const ensureDir = (path) => new Promise((resolve, reject) => (
   })
 ))
 
+/** Ensures that a directory exists. Returns a promise resolving to a boolean. */
+export const ensureDirBool = async path => {
+  try {
+    await ensureDir(path)
+    return true
+  }
+  catch (_) {
+    return false
+  }
+}
+
 /** Returns the directory name for a full path. */
 export const dirName = (path) => {
   const info = parse(path)
