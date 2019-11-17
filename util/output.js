@@ -112,7 +112,7 @@ const outputCallback = async (fn, fnArgs = {}, prog = (0, _fs.progName)(), logSt
   let result, error, success;
 
   try {
-    result = await fn(); // Success is always true, unless we received { result: false }.
+    result = await fn(fnArgs); // Success is always true, unless we received { result: false }.
 
     success = !Boolean(result && result.success != null && result.success === false);
   } catch (err) {

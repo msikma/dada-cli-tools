@@ -78,7 +78,7 @@ export const outputCallback = async (fn, fnArgs = {}, prog = progName(), logStac
   // If an error is thrown, we'll output that instead.
   let result, error, success
   try {
-    result = await fn()
+    result = await fn(fnArgs)
     // Success is always true, unless we received { result: false }.
     success = !Boolean(result && result.success != null && result.success === false)
   }
