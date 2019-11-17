@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.resolveTilde = void 0;
 
 var _fs = require("fs");
 
@@ -77,10 +77,35 @@ const ensureDirBool = async path => {
     return false;
   }
 };
-/** Returns the directory name for a full path. */
+/** Loads a JSON file synchronously. */
 
 
 exports.ensureDirBool = ensureDirBool;
+
+const readJSONSync = (path, encoding = 'utf8') => {
+  return JSON.parse(readFileSync(path, encoding));
+};
+/** Loads a JSON file asynchronously. */
+
+
+exports.readJSONSync = readJSONSync;
+
+const readJSON = (path, encoding = 'utf8') => new Promise((resolve, reject) => _fs.promises.readFile(path, encoding, (err, data) => {
+  // Reject read errors.
+  if (err) return reject(err);
+
+  try {
+    const content = JSON.parse(data);
+    return resolve(content);
+  } catch (parseErr) {
+    // Reject parse errors.
+    return reject(parseErr);
+  }
+}));
+/** Returns the directory name for a full path. */
+
+
+exports.readJSON = readJSON;
 
 const dirName = path => {
   const info = (0, _path.parse)(path);

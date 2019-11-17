@@ -57,6 +57,30 @@ export const ensureDirBool = async path => {
   }
 }
 
+/** Loads a JSON file synchronously. */
+export const readJSONSync = (path, encoding = 'utf8') => {
+  return JSON.parse(readFileSync(path, encoding))
+}
+
+/** Loads a JSON file asynchronously. */
+export const readJSON = (path, encoding = 'utf8') => (
+  new Promise((resolve, reject) => (
+    fs.readFile(path, encoding, (err, data) => {
+      // Reject read errors.
+      if (err) return reject(err)
+
+      try {
+        const content = JSON.parse(data)
+        return resolve(content)
+      }
+      catch (parseErr) {
+        // Reject parse errors.
+        return reject(parseErr)
+      }
+    })
+  ))
+)
+
 /** Returns the directory name for a full path. */
 export const dirName = (path) => {
   const info = parse(path)

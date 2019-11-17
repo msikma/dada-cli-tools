@@ -13,6 +13,7 @@ The items included here were all created as needed while making CLI tools in the
 | `cookies`    | Parsing cookie files for making requests                    |
 | `log`        | Message logging to stdout and to log files                  |
 | `request`    | Requesting data over the network                            |
+| `util/error` | Helper functions for working with exceptions                |
 | `util/fs`    | File and path operations                                    |
 | `util/misc`  | Various small helper functions that don't fit anywhere else |
 | `util/output`| Printing data in various forms (JSON, XML, etc)             |

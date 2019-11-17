@@ -93,10 +93,15 @@ export const logInfo = logVerbose(verbosityLabels['info']) // the 'regular' log 
 export const logDebug = logVerbose(verbosityLabels['debug'])
 export const log = logInfo
 
+/** Exits the program with a given exit code. */
+export const exit = (exitCode = 0) => {
+  process.exit(exitCode)
+}
+
 /** Exits the program with an error. */
 export const die = (...segments) => {
   if (segments.length) {
     logSegments([`${progName()}:`, ...segments], console.error, false, chalk.red)
   }
-  process.exit(1)
+  exit(1)
 }

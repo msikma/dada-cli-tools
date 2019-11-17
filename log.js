@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.die = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
+exports.die = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
@@ -115,16 +115,24 @@ exports.logInfo = logInfo;
 const logDebug = logVerbose(verbosityLabels['debug']);
 exports.logDebug = logDebug;
 const log = logInfo;
-/** Exits the program with an error. */
+/** Exits the program with a given exit code. */
 
 exports.log = log;
+
+const exit = (exitCode = 0) => {
+  process.exit(exitCode);
+};
+/** Exits the program with an error. */
+
+
+exports.exit = exit;
 
 const die = (...segments) => {
   if (segments.length) {
     logSegments([`${(0, _fs.progName)()}:`, ...segments], console.error, false, _chalk.default.red);
   }
 
-  process.exit(1);
+  exit(1);
 };
 
 exports.die = die;
