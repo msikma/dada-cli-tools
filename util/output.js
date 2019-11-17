@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.outputTerminal = exports.outputXML = exports.outputJSON = void 0;
+exports.default = exports.outputTerminal = exports.outputXML = exports.outputJSON = exports.getDataDescriptions = exports.dataDescriptions = exports.dataTypes = void 0;
 
 var _util = _interopRequireDefault(require("util"));
 
@@ -13,8 +13,33 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
+// Shortcuts to our output types.
+const dataTypes = {
+  json: outputJSON,
+  xml: outputXML,
+  terminal: outputTerminal // Descriptions of the data type for use in e.g. a CLI tool.
 
+};
+exports.dataTypes = dataTypes;
+const dataDescriptions = {
+  json: `JSON string`,
+  xml: 'XML string',
+  terminal: 'Plain text readable in terminal (default)'
+  /** Returns descriptions for the output types, with an optional default value highlighted. */
+
+};
+exports.dataDescriptions = dataDescriptions;
+
+const getDataDescriptions = (defaultValue = 'terminal') => {
+  return Object.keys(defaults).reduce((items, key) => ({ ...items,
+    [key]: key === defaultValue ? `${items[key]} (default)` : `${items[key]}`
+  }), {});
+};
 /** Outputs data as JSON. */
+
+
+exports.getDataDescriptions = getDataDescriptions;
+
 const outputJSON = obj => {
   return JSON.stringify(obj);
 };
@@ -43,17 +68,11 @@ const outputTerminal = obj => {
   // This uses a depth of 8, as opposed to Node's regular console.log()
   // which only goes 2 levels deep.
   return _util.default.inspect(obj, false, 8, true);
-}; // Shortcuts to our output types.
+};
+/** Outputs data using the given output type (JSON, XML, Terminal). */
 
 
 exports.outputTerminal = outputTerminal;
-const dataTypes = {
-  json: outputJSON,
-  xml: outputXML,
-  terminal: outputTerminal
-  /** Outputs data using the given output type (JSON, XML, Terminal). */
-
-};
 
 const outputByType = (obj, type) => {
   try {

@@ -4,6 +4,29 @@
 import util from 'util'
 import convert from 'xml-js'
 
+// Shortcuts to our output types.
+export const dataTypes = {
+  json: outputJSON,
+  xml: outputXML,
+  terminal: outputTerminal
+}
+
+// Descriptions of the data type for use in e.g. a CLI tool.
+export const dataDescriptions = {
+  json: `JSON string`,
+  xml: 'XML string',
+  terminal: 'Plain text readable in terminal (default)'
+}
+
+/** Returns descriptions for the output types, with an optional default value highlighted. */
+export const getDataDescriptions = (defaultValue = 'terminal') => {
+  return Object.keys(defaults)
+    .reduce(
+      (items, key) => ({ ...items, [key]: (key === defaultValue ? `${items[key]} (default)` : `${items[key]}`) }),
+      {}
+    )
+}
+
 /** Outputs data as JSON. */
 export const outputJSON = obj => {
   return JSON.stringify(obj)
@@ -21,13 +44,6 @@ export const outputTerminal = obj => {
   // This uses a depth of 8, as opposed to Node's regular console.log()
   // which only goes 2 levels deep.
   return util.inspect(obj, false, 8, true)
-}
-
-// Shortcuts to our output types.
-const dataTypes = {
-  json: outputJSON,
-  xml: outputXML,
-  terminal: outputTerminal
 }
 
 /** Outputs data using the given output type (JSON, XML, Terminal). */
