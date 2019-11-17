@@ -47,7 +47,7 @@ const safeOutputType = type => {
 exports.safeOutputType = safeOutputType;
 
 const getDataDescriptions = (defaultValue = dataDefaultType) => {
-  return Object.keys(defaults).reduce((items, key) => ({ ...items,
+  return Object.keys(dataDescriptions).reduce((items, key) => ({ ...items,
     [key]: key === defaultValue ? `${items[key]} (default)` : `${items[key]}`
   }), {});
 };
