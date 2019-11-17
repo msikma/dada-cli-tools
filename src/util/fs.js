@@ -1,7 +1,7 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-import { promises as fs, constants } from 'fs'
+import { promises as fs, constants, readFileSync } from 'fs'
 import { homedir } from 'os'
 import { parse, basename } from 'path'
 import mkdirp from 'mkdirp'

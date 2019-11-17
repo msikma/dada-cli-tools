@@ -83,7 +83,7 @@ const ensureDirBool = async path => {
 exports.ensureDirBool = ensureDirBool;
 
 const readJSONSync = (path, encoding = 'utf8') => {
-  return JSON.parse(readFileSync(path, encoding));
+  return JSON.parse((0, _fs.readFileSync)(path, encoding));
 };
 /** Loads a JSON file asynchronously. */
 
