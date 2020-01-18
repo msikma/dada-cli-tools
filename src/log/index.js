@@ -5,13 +5,18 @@ import chalk from 'chalk'
 import { inspect } from 'util'
 import { isNumber, isString } from 'lodash'
 
-import { progName } from './util/fs'
+import { progName } from '../util/fs'
+
+// Export table logging routines.
+export { logTable } from './table'
 
 // Supported log levels and default. Can be used in e.g. CLI --help output.
 export const logLevels = ['error', 'warn', 'info', 'debug']
 export const logDefaultLevel = 'info'
 
 // Shortcut labels used to describe various verbosity levels.
+// The available levels are a subset of the RFC 5424 standard.
+// <https://tools.ietf.org/html/rfc5424>
 const verbosityLabels = {
   error: 8,
   warn: 6,
@@ -37,7 +42,7 @@ export const setVerbosity = (verbosity) => {
   }
   const vbNumber = verbosityLabels[verbosity]
   if (vbNumber == null) throw new Error(`setVerbosity() called with unrecognized label (${verbosity})`)
-  options.verbose = vbNumber
+  options.verbosity = vbNumber
 }
 
 /**
@@ -51,6 +56,8 @@ export const setVerbosity = (verbosity) => {
  * The 'colorAll' function is used to colorize everything to a specific color,
  * and 'colorRegular' is used to colorize all strings that aren't already being
  * colorized for any of the aforementioned cases.
+ * 
+ * If the logging function is null, the value is returned instead.
  */
 const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null, colorRegular = null) => {
   const str = segments.filter(s => s).map((s, n) => {
@@ -74,7 +81,16 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
     return inspect(s, { colors: true, depth: 4 }) + space
   }).join('')
 
-  logFn(colorAll ? colorAll(str) : str)
+  // Wrap in colorizer function if the output must be one single color.
+  const value = colorAll ? colorAll(str) : str
+
+  // Return the output if no logging function is provided.
+  if (logFn == null) {
+    return value
+  }
+  else {
+    return logFn(colorAll ? colorAll(str) : str)
+  }
 }
 
 /** Logs a line of text with a given verbosity (as a number). */

@@ -3,6 +3,12 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+Object.defineProperty(exports, "logTable", {
+  enumerable: true,
+  get: function () {
+    return _table.logTable;
+  }
+});
 exports.die = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
@@ -11,16 +17,21 @@ var _util = require("util");
 
 var _lodash = require("lodash");
 
-var _fs = require("./util/fs");
+var _fs = require("../util/fs");
+
+var _table = require("./table");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
+// Export table logging routines.
 // Supported log levels and default. Can be used in e.g. CLI --help output.
 const logLevels = ['error', 'warn', 'info', 'debug'];
 exports.logLevels = logLevels;
 const logDefaultLevel = 'info'; // Shortcut labels used to describe various verbosity levels.
+// The available levels are a subset of the RFC 5424 standard.
+// <https://tools.ietf.org/html/rfc5424>
 
 exports.logDefaultLevel = logDefaultLevel;
 const verbosityLabels = {
@@ -47,7 +58,7 @@ const setVerbosity = verbosity => {
 
   const vbNumber = verbosityLabels[verbosity];
   if (vbNumber == null) throw new Error(`setVerbosity() called with unrecognized label (${verbosity})`);
-  options.verbose = vbNumber;
+  options.verbosity = vbNumber;
 };
 /**
  * Logs strings and objects to the console.
@@ -60,6 +71,8 @@ const setVerbosity = verbosity => {
  * The 'colorAll' function is used to colorize everything to a specific color,
  * and 'colorRegular' is used to colorize all strings that aren't already being
  * colorized for any of the aforementioned cases.
+ * 
+ * If the logging function is null, the value is returned instead.
  */
 
 
@@ -87,8 +100,15 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
       colors: true,
       depth: 4
     }) + space;
-  }).join('');
-  logFn(colorAll ? colorAll(str) : str);
+  }).join(''); // Wrap in colorizer function if the output must be one single color.
+
+  const value = colorAll ? colorAll(str) : str; // Return the output if no logging function is provided.
+
+  if (logFn == null) {
+    return value;
+  } else {
+    return logFn(colorAll ? colorAll(str) : str);
+  }
 };
 /** Logs a line of text with a given verbosity (as a number). */
 
