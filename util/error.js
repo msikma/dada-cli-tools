@@ -8,7 +8,7 @@ exports.unpackError = void 0;
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-/** This modifies the tilde (~) to point to the user's home. */
+/** Unpacks an error for easier logging. */
 const unpackError = (err = {}) => {
   let name = null,
       code = null,
