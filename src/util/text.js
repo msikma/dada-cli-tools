@@ -1,6 +1,15 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
+import escape from 'markdown-escape'
+
+/**
+ * Prevents a string from activating Markdown features.
+ */
+export const escapeMarkdown = (md) => (
+  escape(md)
+)
+
 /**
  * Removes extra empty lines by trimming every line, then removing the empty strings.
  * If 'leaveGap' is true, we will instead compress multiple empty lines down to a single empty line.
@@ -28,23 +37,61 @@ export const removeUnnecessaryLines = (str) => (
   str.split('\n').map(s => s.trim() === '' ? s.trim() : s).join('\n').split('\n\n\n').join('\n\n')
 )
 
-/** List of block elements. (Non-exhaustive, but it works well enough for most cases.) */
-const blockEls = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul', 'pre', 'address', 'blockquote', 'dl', 'div', 'fieldset', 'form', 'noscript', 'table']
-
-/** Converts block elements to linebreaks. Useful for cleaning up HTML before converting to plain text. */
-export const blockElsToLb = ($text) => {
-  for (let el of blockEls) {
-    $text.find(el).before('\n')
-  }
-  $text.find('br').replaceWith('\n')
-  $text.find('hr').replaceWith('\n')
-}
-
 // Ensures that a string ends with a period.
 export const ensurePeriod = (str) => {
   if (str.slice(-1) === '.') return str
   return `${str}.`
 }
+
+/**
+ * Separate images from Markdown. We can't display them on Discord.
+ * This returns the Markdown text with all image tags removed, and the image tags separately.
+ */
+export const separateMarkdownImages = (md, leavePlaceholder = false) => {
+  // Matches images, e.g.: ![alt text](https://i.imgur.com/asdf.jpg title text)
+  // Or: ![alt text](https://i.imgur.com/asdf.jpg)
+  const imgRe = /!\[(.+?)\]\(([^ ]+)( (.+?))?\)/g
+  const images = []
+  let match
+  while ((match = imgRe.exec(md)) !== null) {
+    images.push({ alt: match[1], url: match[2], title: match[4] })
+  }
+  return {
+    images,
+    text: removeEmptyLines(md.replace(imgRe, leavePlaceholder ? '[image]' : ''), true)
+  }
+}
+
+// Capitalizes the first letter of a string.
+export const capitalizeFirst = (str) => (
+  `${str.charAt(0).toUpperCase()}${str.slice(1)}`
+)
+
+/**
+ * Cuts a long description down to a specific length, removing whole sentences.
+ * Returns a function for a given value to cut the text down to.
+ */
+export const limitStringSentence = (limit = 700) => (desc) => {
+  if (desc.length < limit) return desc
+
+  const limitedChars = desc.slice(0, limit)
+  // Cut off the last line so we don't end on a half-sentence.
+  const limitedLines = limitedChars
+    .split('\n')
+    .slice(0, -1)
+    .join('\n')
+    .trim()
+
+  return `${limitedLines}\n[...]`
+}
+
+/**
+ * Limits a string to a specific length. Adds ellipsis if it exceeds.
+ * Returns a function for a given value to cut the string down to.
+ */
+export const limitString = (value) => (str) => (
+  str.length > value ? `${str.substr(0, value - 3)}...` : str
+)
 
 /**
  * Splits a string by a separator, but only by the last occurrence of the separator.
