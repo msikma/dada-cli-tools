@@ -7,6 +7,9 @@ import { parse, basename } from 'path'
 import mkdirp from 'mkdirp'
 import process from 'process'
 
+/** Max number of times we'll try to figure out a different filename in writeFileSafely(). */
+const MAX_FILENAME_RETRIES = 99
+
 /** This modifies the tilde (~) to point to the user's home. */
 export const resolveTilde = (pathStr) => {
   let path = pathStr.trim()
@@ -15,6 +18,74 @@ export const resolveTilde = (pathStr) => {
     path = homedir() + path.slice(1)
   }
   return path
+}
+
+/** Splits up a filename into the basename (including the path) and file extension. */
+export const splitFilename = filename => {
+  const bits = filename.split('.')
+  const basename = bits.slice(0, -1).join('.')
+  const extension = bits.slice(-1)
+  return {
+    basename,
+    extension
+  }
+}
+
+/**
+ * Determines a filename that does not exist yet.
+ * 
+ * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.
+ * TODO: this should be simplified, by getting a full list of files and then
+ * determining the new name once, rather than checking each possibility.
+ */
+export const getSafeFilename = async (target, separator = '', limit = MAX_FILENAME_RETRIES) => {
+  const { basename, extension } = splitFilename(target)
+
+  let targetName = { basename, suffix: 0 }, targetNameStr
+  while (true) {
+    // Increment the name suffix and see if we can create this file.
+    targetNameStr = `${targetName.basename}${separator}${targetName.suffix > 0 ? targetName.suffix : ''}.${extension}`
+
+    if (await fileExists(targetNameStr)) {
+      targetName.suffix += 1
+
+      // If we've tried too many times, fail and return information.
+      if (targetName.suffix >= limit) {
+        return {
+          success: false,
+          attempts: targetName.suffix,
+          separator: separator,
+          passedFilename: target,
+          targetFilename: targetNameStr,
+          hasModifiedFilename: target !== targetNameStr
+        }
+      }
+    }
+    else {
+      return {
+        success: true,
+        attempts: targetName.suffix,
+        separator: separator,
+        passedFilename: target,
+        targetFilename: targetNameStr,
+        hasModifiedFilename: target !== targetNameStr
+      }
+    }
+  }
+}
+
+/** Writes a file "safely" - if the target filename exists, a different name will be chosen. */
+export const writeFileSafely = async (target, content, options) => {
+  const safeFn = await getSafeFilename(target)
+  if (!safeFn.success) {
+    return safeFn
+  }
+
+  const result = await fs.writeFile(safeFn.targetFilename, content, options)
+  return {
+    ...safeFn,
+    success: result
+  }
 }
 
 /** Checks whether we can access (read, modify) a path. */

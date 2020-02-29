@@ -1,10 +1,18 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
+import { promises as fs, createWriteStream } from 'fs'
 import got from 'got'
+import { promisify } from 'util'
 import { isEmpty } from 'lodash'
+import chalk from 'chalk'
+import stream from 'stream'
 
+import { getSafeFilename, fileExists } from './util/fs'
 import { logDebug } from './log'
+
+// Allow the stream pipeline function to return Promises.
+const pipeline = promisify(stream.pipeline)
 
 // Headers sent by default, similar to what a regular browser would send.
 const stdHeaders = {
@@ -36,6 +44,41 @@ const postAttributes = (postData, { urlEncoded }) => {
 }
 
 /**
+ * Wrapper for downloadFile() that adds the standard logger for CLI purposes.
+ */
+export const downloadFileLogged = (url, target, opts) => {
+  return downloadFile(url, target, { ...opts, logFn: logDebug })
+}
+
+/**
+ * Requests a URL and saves the resulting data stream to a file.
+ * 
+ * Useful for downloading files.
+ */
+export const downloadFile = async (url, target, opts) => {
+  const { logFn } = opts
+  const safeFn = await getSafeFilename(target)
+  if (!safeFn.success) {
+    return safeFn
+  }
+
+  const { targetFilename } = safeFn
+  const req = makeGotRequest(url, { ...opts, returnStream: true })
+
+  logFn && logFn('Saving to file:', chalk.green(targetFilename), safeFn.hasModifiedFilename ? `(file already existed: ${chalk.yellow(target)})` : null)
+
+  // Wait for the file to finish downloading and saving to the target.
+  await pipeline(req, createWriteStream(targetFilename))
+
+  // Check if the target successfully got saved.
+  const reqSuccess = await fileExists(targetFilename)
+  return {
+    ...safeFn,
+    success: reqSuccess
+  }
+}
+
+/**
  * Wrapper for request() that adds the standard logger for CLI purposes.
  */
 export const requestLogged = (url, opts) => {
@@ -43,9 +86,9 @@ export const requestLogged = (url, opts) => {
 }
 
 /**
- * Requests a URL and returns the response (or the full response if specified).
+ * Returns a Got request for requesting or sending data.
  */
-export const request = async (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn } = {}) => {
+export const makeGotRequest = (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn, returnStream = false } = {}, customOpts = {}) => {
   const postAttr = !isEmpty(postData) ? postAttributes(postData, { urlEncoded }) : {}
   const reqOpts = {
     responseType: 'json',
@@ -64,10 +107,26 @@ export const request = async (url, { postData = {}, urlEncoded = true, headers =
       ]
     },
     // Add in POST data if requested.
-    ...postAttr
+    ...postAttr,
+    // Add in custom request options.
+    ...customOpts
   }
-  logFn && logFn('Requesting HTTP call with the following options:', reqOpts)
-  const req = got(url, reqOpts)
+  logFn && logFn('Requesting HTTP call with the following options:')
+  logFn && logFn(reqOpts)
+
+  if (returnStream) {
+    return got.stream(url, reqOpts)
+  }
+  else {
+    return got(url, reqOpts)
+  }
+}
+
+/**
+ * Requests a URL and returns the full response (or just the body, if specified).
+ */
+export const request = async (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn } = {}, customOpts = {}) => {
+  const req = makeGotRequest(url, { postData, urlEncoded, headers, jar, logFn }, customOpts)
   const res = await req
   logFn && logFn('Requested URL:', res.requestUrl, '- duration:', res.timings.end - res.timings.start, 'ms', ...(!isEmpty(postData) ? [`- sending POST${urlEncoded ? ' (urlEncoded)' : ''}:\n`, postData] : []))
   return res
