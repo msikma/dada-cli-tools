@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.splitFilename = exports.resolveTilde = void 0;
 
 var _fs = require("fs");
 
@@ -20,7 +20,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
+/** Max number of times we'll try to figure out a different filename in writeFileSafely(). */
+const MAX_FILENAME_RETRIES = 99;
 /** This modifies the tilde (~) to point to the user's home. */
+
 const resolveTilde = pathStr => {
   let path = pathStr.trim(); // The tilde is only valid if it's at the start of the string.
 
@@ -30,10 +33,92 @@ const resolveTilde = pathStr => {
 
   return path;
 };
-/** Checks whether we can access (read, modify) a path. */
+/** Splits up a filename into the basename (including the path) and file extension. */
 
 
 exports.resolveTilde = resolveTilde;
+
+const splitFilename = filename => {
+  const bits = filename.split('.');
+  const basename = bits.slice(0, -1).join('.');
+  const extension = bits.slice(-1);
+  return {
+    basename,
+    extension
+  };
+};
+/**
+ * Determines a filename that does not exist yet.
+ * 
+ * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.
+ * TODO: this should be simplified, by getting a full list of files and then
+ * determining the new name once, rather than checking each possibility.
+ */
+
+
+exports.splitFilename = splitFilename;
+
+const getSafeFilename = async (target, separator = '', limit = MAX_FILENAME_RETRIES) => {
+  const {
+    basename,
+    extension
+  } = splitFilename(target);
+  let targetName = {
+    basename,
+    suffix: 0
+  },
+      targetNameStr;
+
+  while (true) {
+    // Increment the name suffix and see if we can create this file.
+    targetNameStr = `${targetName.basename}${separator}${targetName.suffix > 0 ? targetName.suffix : ''}.${extension}`;
+
+    if (await fileExists(targetNameStr)) {
+      targetName.suffix += 1; // If we've tried too many times, fail and return information.
+
+      if (targetName.suffix >= limit) {
+        return {
+          success: false,
+          attempts: targetName.suffix,
+          separator: separator,
+          passedFilename: target,
+          targetFilename: targetNameStr,
+          hasModifiedFilename: target !== targetNameStr
+        };
+      }
+    } else {
+      return {
+        success: true,
+        attempts: targetName.suffix,
+        separator: separator,
+        passedFilename: target,
+        targetFilename: targetNameStr,
+        hasModifiedFilename: target !== targetNameStr
+      };
+    }
+  }
+};
+/** Writes a file "safely" - if the target filename exists, a different name will be chosen. */
+
+
+exports.getSafeFilename = getSafeFilename;
+
+const writeFileSafely = async (target, content, options) => {
+  const safeFn = await getSafeFilename(target);
+
+  if (!safeFn.success) {
+    return safeFn;
+  }
+
+  const result = await _fs.promises.writeFile(safeFn.targetFilename, content, options);
+  return { ...safeFn,
+    success: result
+  };
+};
+/** Checks whether we can access (read, modify) a path. */
+
+
+exports.writeFileSafely = writeFileSafely;
 
 const canAccess = async path => {
   try {

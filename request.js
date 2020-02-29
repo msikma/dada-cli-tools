@@ -3,11 +3,21 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.request = exports.requestLogged = void 0;
+exports.request = exports.makeGotRequest = exports.requestLogged = exports.downloadFile = exports.downloadFileLogged = void 0;
+
+var _fs = require("fs");
 
 var _got = _interopRequireDefault(require("got"));
 
+var _util = require("util");
+
 var _lodash = require("lodash");
+
+var _chalk = _interopRequireDefault(require("chalk"));
+
+var _stream = _interopRequireDefault(require("stream"));
+
+var _fs2 = require("./util/fs");
 
 var _log = require("./log");
 
@@ -15,7 +25,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
-// Headers sent by default, similar to what a regular browser would send.
+// Allow the stream pipeline function to return Promises.
+const pipeline = (0, _util.promisify)(_stream.default.pipeline); // Headers sent by default, similar to what a regular browser would send.
+
 const stdHeaders = {
   'Accept-Language': 'en-US,en;q=0.9,ja;q=0.8,nl;q=0.7,de;q=0.6,es;q=0.5,it;q=0.4,pt;q=0.3',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -47,9 +59,55 @@ const postAttributes = (postData, {
   }
 };
 /**
+ * Wrapper for downloadFile() that adds the standard logger for CLI purposes.
+ */
+
+
+const downloadFileLogged = (url, target, opts) => {
+  return downloadFile(url, target, { ...opts,
+    logFn: _log.logDebug
+  });
+};
+/**
+ * Requests a URL and saves the resulting data stream to a file.
+ * 
+ * Useful for downloading files.
+ */
+
+
+exports.downloadFileLogged = downloadFileLogged;
+
+const downloadFile = async (url, target, opts) => {
+  const {
+    logFn
+  } = opts;
+  const safeFn = await (0, _fs2.getSafeFilename)(target);
+
+  if (!safeFn.success) {
+    return safeFn;
+  }
+
+  const {
+    targetFilename
+  } = safeFn;
+  const req = makeGotRequest(url, { ...opts,
+    returnStream: true
+  });
+  logFn && logFn('Saving to file:', _chalk.default.green(targetFilename), safeFn.hasModifiedFilename ? `(file already existed: ${_chalk.default.yellow(target)})` : null); // Wait for the file to finish downloading and saving to the target.
+
+  await pipeline(req, (0, _fs.createWriteStream)(targetFilename)); // Check if the target successfully got saved.
+
+  const reqSuccess = await (0, _fs2.fileExists)(targetFilename);
+  return { ...safeFn,
+    success: reqSuccess
+  };
+};
+/**
  * Wrapper for request() that adds the standard logger for CLI purposes.
  */
 
+
+exports.downloadFile = downloadFile;
 
 const requestLogged = (url, opts) => {
   return request(url, { ...opts,
@@ -57,19 +115,20 @@ const requestLogged = (url, opts) => {
   });
 };
 /**
- * Requests a URL and returns the response (or the full response if specified).
+ * Returns a Got request for requesting or sending data.
  */
 
 
 exports.requestLogged = requestLogged;
 
-const request = async (url, {
+const makeGotRequest = (url, {
   postData = {},
   urlEncoded = true,
   headers = {},
   jar,
-  logFn
-} = {}) => {
+  logFn,
+  returnStream = false
+} = {}, customOpts = {}) => {
   const postAttr = !(0, _lodash.isEmpty)(postData) ? postAttributes(postData, {
     urlEncoded
   }) : {};
@@ -87,10 +146,40 @@ const request = async (url, {
       }]
     },
     // Add in POST data if requested.
-    ...postAttr
+    ...postAttr,
+    // Add in custom request options.
+    ...customOpts
   };
-  logFn && logFn('Requesting HTTP call with the following options:', reqOpts);
-  const req = (0, _got.default)(url, reqOpts);
+  logFn && logFn('Requesting HTTP call with the following options:');
+  logFn && logFn(reqOpts);
+
+  if (returnStream) {
+    return _got.default.stream(url, reqOpts);
+  } else {
+    return (0, _got.default)(url, reqOpts);
+  }
+};
+/**
+ * Requests a URL and returns the full response (or just the body, if specified).
+ */
+
+
+exports.makeGotRequest = makeGotRequest;
+
+const request = async (url, {
+  postData = {},
+  urlEncoded = true,
+  headers = {},
+  jar,
+  logFn
+} = {}, customOpts = {}) => {
+  const req = makeGotRequest(url, {
+    postData,
+    urlEncoded,
+    headers,
+    jar,
+    logFn
+  }, customOpts);
   const res = await req;
   logFn && logFn('Requested URL:', res.requestUrl, '- duration:', res.timings.end - res.timings.start, 'ms', ...(!(0, _lodash.isEmpty)(postData) ? [`- sending POST${urlEncoded ? ' (urlEncoded)' : ''}:\n`, postData] : []));
   return res;
