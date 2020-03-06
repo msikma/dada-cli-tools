@@ -46,16 +46,16 @@ const postAttributes = (postData, { urlEncoded }) => {
 /**
  * Wrapper for downloadFile() that adds the standard logger for CLI purposes.
  */
-export const downloadFileLogged = (url, target, opts) => {
+export const downloadFileLogged = (url, target, opts = {}) => {
   return downloadFile(url, target, { ...opts, logFn: logDebug })
 }
 
 /**
  * Requests a URL and saves the resulting data stream to a file.
- * 
+ *
  * Useful for downloading files.
  */
-export const downloadFile = async (url, target, opts) => {
+export const downloadFile = async (url, target, opts = {}) => {
   const { logFn } = opts
   const safeFn = await getSafeFilename(target)
   if (!safeFn.success) {
@@ -81,7 +81,7 @@ export const downloadFile = async (url, target, opts) => {
 /**
  * Wrapper for request() that adds the standard logger for CLI purposes.
  */
-export const requestLogged = (url, opts) => {
+export const requestLogged = (url, opts = {}) => {
   return request(url, { ...opts, logFn: logDebug })
 }
 

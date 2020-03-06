@@ -63,21 +63,21 @@ const postAttributes = (postData, {
  */
 
 
-const downloadFileLogged = (url, target, opts) => {
+const downloadFileLogged = (url, target, opts = {}) => {
   return downloadFile(url, target, { ...opts,
     logFn: _log.logDebug
   });
 };
 /**
  * Requests a URL and saves the resulting data stream to a file.
- * 
+ *
  * Useful for downloading files.
  */
 
 
 exports.downloadFileLogged = downloadFileLogged;
 
-const downloadFile = async (url, target, opts) => {
+const downloadFile = async (url, target, opts = {}) => {
   const {
     logFn
   } = opts;
@@ -109,7 +109,7 @@ const downloadFile = async (url, target, opts) => {
 
 exports.downloadFile = downloadFile;
 
-const requestLogged = (url, opts) => {
+const requestLogged = (url, opts = {}) => {
   return request(url, { ...opts,
     logFn: _log.logDebug
   });
