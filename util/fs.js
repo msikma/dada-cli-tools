@@ -39,9 +39,18 @@ const resolveTilde = pathStr => {
 exports.resolveTilde = resolveTilde;
 
 const splitFilename = filename => {
-  const bits = filename.split('.');
+  const fn = String(filename);
+  const bits = fn.split('.');
+
+  if (bits.length === 1) {
+    return {
+      basename: fn,
+      extension: ''
+    };
+  }
+
   const basename = bits.slice(0, -1).join('.');
-  const extension = bits.slice(-1);
+  const extension = bits.slice(-1)[0];
   return {
     basename,
     extension
@@ -49,7 +58,7 @@ const splitFilename = filename => {
 };
 /**
  * Determines a filename that does not exist yet.
- * 
+ *
  * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.
  * TODO: this should be simplified, by getting a full list of files and then
  * determining the new name once, rather than checking each possibility.
