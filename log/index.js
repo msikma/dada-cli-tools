@@ -9,11 +9,11 @@ Object.defineProperty(exports, "logTable", {
     return _table.logTable;
   }
 });
-exports.die = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = void 0;
+exports.die = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.inspect = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = exports.logDepth = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
-var _util = require("util");
+var _util = _interopRequireDefault(require("util"));
 
 var _lodash = require("lodash");
 
@@ -26,7 +26,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 // Export table logging routines.
-// Supported log levels and default. Can be used in e.g. CLI --help output.
+// Default logging depth.
+const logDepth = 6; // Supported log levels and default. Can be used in e.g. CLI --help output.
+
+exports.logDepth = logDepth;
 const logLevels = ['error', 'warn', 'info', 'debug'];
 exports.logLevels = logLevels;
 const logDefaultLevel = 'info'; // Shortcut labels used to describe various verbosity levels.
@@ -61,6 +64,21 @@ const setVerbosity = verbosity => {
   options.verbosity = vbNumber;
 };
 /**
+ * Custom util.inspect() function.
+ * 
+ * TODO: add output customizations.
+ */
+
+
+exports.setVerbosity = setVerbosity;
+
+const inspect = obj => {
+  return _util.default.inspect(obj, {
+    colors: true,
+    depth: logDepth
+  });
+};
+/**
  * Logs strings and objects to the console.
  *
  * Takes an array of segments to log, which will be separated by a space just
@@ -76,7 +94,7 @@ const setVerbosity = verbosity => {
  */
 
 
-exports.setVerbosity = setVerbosity;
+exports.inspect = inspect;
 
 const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null, colorRegular = null) => {
   const str = segments.filter(s => s).map((s, n) => {
@@ -96,10 +114,7 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
     } // Non-string objects are inspected.
 
 
-    return (0, _util.inspect)(s, {
-      colors: true,
-      depth: 4
-    }) + space;
+    return inspect(s) + space;
   }).join(''); // Wrap in colorizer function if the output must be one single color.
 
   const value = colorAll ? colorAll(str) : str; // Return the output if no logging function is provided.

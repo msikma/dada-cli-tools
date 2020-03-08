@@ -2,13 +2,16 @@
 // © MIT license
 
 import chalk from 'chalk'
-import { inspect } from 'util'
+import util from 'util'
 import { isNumber, isString } from 'lodash'
 
 import { progName } from '../util/fs'
 
 // Export table logging routines.
 export { logTable } from './table'
+
+// Default logging depth.
+export const logDepth = 6
 
 // Supported log levels and default. Can be used in e.g. CLI --help output.
 export const logLevels = ['error', 'warn', 'info', 'debug']
@@ -46,6 +49,15 @@ export const setVerbosity = (verbosity) => {
 }
 
 /**
+ * Custom util.inspect() function.
+ * 
+ * TODO: add output customizations.
+ */
+export const inspect = (obj) => {
+  return util.inspect(obj, { colors: true, depth: logDepth })
+}
+
+/**
  * Logs strings and objects to the console.
  *
  * Takes an array of segments to log, which will be separated by a space just
@@ -78,7 +90,7 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
     }
 
     // Non-string objects are inspected.
-    return inspect(s, { colors: true, depth: 4 }) + space
+    return inspect(s) + space
   }).join('')
 
   // Wrap in colorizer function if the output must be one single color.
