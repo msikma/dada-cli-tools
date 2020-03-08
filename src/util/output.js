@@ -2,8 +2,8 @@
 // © MIT license
 
 import util from 'util'
-import convert from 'xml-js'
 
+import { outputXML } from './xml'
 import { unpackError } from './error'
 import { logFatal, log, die, exit } from '../log'
 import { progName } from './fs'
@@ -39,12 +39,6 @@ export const getDataDescriptions = (defaultValue = dataDefaultType) => {
 /** Outputs data as JSON. */
 export const outputJSON = obj => {
   return JSON.stringify(obj)
-}
-
-/** Outputs data as XML. */
-export const outputXML = obj => {
-  const outData = convert.js2xml({ data: obj }, { compact: true, spaces: 2 });
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${outData}`
 }
 
 /** Outputs data formatted for the terminal with color. */

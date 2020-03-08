@@ -3,11 +3,11 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.dataTypes = exports.outputCallback = exports.outputTerminal = exports.outputXML = exports.outputJSON = exports.getDataDescriptions = exports.safeOutputType = exports.dataDefaultType = exports.dataDescriptions = void 0;
+exports.default = exports.dataTypes = exports.outputCallback = exports.outputTerminal = exports.outputJSON = exports.getDataDescriptions = exports.safeOutputType = exports.dataDefaultType = exports.dataDescriptions = void 0;
 
 var _util = _interopRequireDefault(require("util"));
 
-var _xmlJs = _interopRequireDefault(require("xml-js"));
+var _xml = require("./xml");
 
 var _error = require("./error");
 
@@ -59,25 +59,10 @@ exports.getDataDescriptions = getDataDescriptions;
 const outputJSON = obj => {
   return JSON.stringify(obj);
 };
-/** Outputs data as XML. */
-
-
-exports.outputJSON = outputJSON;
-
-const outputXML = obj => {
-  const outData = _xmlJs.default.js2xml({
-    data: obj
-  }, {
-    compact: true,
-    spaces: 2
-  });
-
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${outData}`;
-};
 /** Outputs data formatted for the terminal with color. */
 
 
-exports.outputXML = outputXML;
+exports.outputJSON = outputJSON;
 
 const outputTerminal = obj => {
   // Use the util.inspect() method to log the entire object with color.
@@ -147,7 +132,7 @@ const outputCallback = async (fn, fnArgs = {}, prog = (0, _fs.progName)(), logSt
 exports.outputCallback = outputCallback;
 const dataTypes = {
   json: outputJSON,
-  xml: outputXML,
+  xml: _xml.outputXML,
   terminal: outputTerminal
   /** Outputs data using the given output type (JSON, XML, Terminal). */
 
