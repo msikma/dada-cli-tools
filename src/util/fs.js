@@ -138,23 +138,11 @@ export const readJSONSync = (path, encoding = 'utf8') => {
 }
 
 /** Loads a JSON file asynchronously. */
-export const readJSON = (path, encoding = 'utf8') => (
-  new Promise((resolve, reject) => (
-    fs.readFile(path, encoding, (err, data) => {
-      // Reject read errors.
-      if (err) return reject(err)
-
-      try {
-        const content = JSON.parse(data)
-        return resolve(content)
-      }
-      catch (parseErr) {
-        // Reject parse errors.
-        return reject(parseErr)
-      }
-    })
-  ))
-)
+export const readJSON = async (path, encoding = 'utf8') => {
+  const data = await fs.readFile(path, encoding)
+  const content = JSON.parse(data)
+  return content
+}
 
 /** Returns the directory name for a full path. */
 export const dirName = (path) => {

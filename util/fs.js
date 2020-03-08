@@ -184,18 +184,11 @@ const readJSONSync = (path, encoding = 'utf8') => {
 
 exports.readJSONSync = readJSONSync;
 
-const readJSON = (path, encoding = 'utf8') => new Promise((resolve, reject) => _fs.promises.readFile(path, encoding, (err, data) => {
-  // Reject read errors.
-  if (err) return reject(err);
-
-  try {
-    const content = JSON.parse(data);
-    return resolve(content);
-  } catch (parseErr) {
-    // Reject parse errors.
-    return reject(parseErr);
-  }
-}));
+const readJSON = async (path, encoding = 'utf8') => {
+  const data = await _fs.promises.readFile(path, encoding);
+  const content = JSON.parse(data);
+  return content;
+};
 /** Returns the directory name for a full path. */
 
 
