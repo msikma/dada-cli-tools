@@ -140,9 +140,9 @@ const logFatal = logVerbose(verbosityLabels['error'], console.error, false, _cha
 exports.logFatal = logFatal;
 const logError = logVerbose(verbosityLabels['error']);
 exports.logError = logError;
-const logWarn = logVerbose(verbosityLabels['warn']);
+const logWarn = logVerbose(verbosityLabels['warn'], console.log, true, _chalk.default.yellow);
 exports.logWarn = logWarn;
-const logNotice = logVerbose(verbosityLabels['info'], console.log, false, _chalk.default.blue);
+const logNotice = logVerbose(verbosityLabels['info'], console.log, true, _chalk.default.blue);
 exports.logNotice = logNotice;
 const logInfo = logVerbose(verbosityLabels['info']); // the 'regular' log function
 
