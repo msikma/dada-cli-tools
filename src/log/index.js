@@ -115,8 +115,8 @@ const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = 
 /** Create log functions for each verbosity. */
 export const logFatal = logVerbose(verbosityLabels['error'], console.error, false, chalk.red)
 export const logError = logVerbose(verbosityLabels['error'])
-export const logWarn = logVerbose(verbosityLabels['warn'])
-export const logNotice = logVerbose(verbosityLabels['info'], console.log, false, chalk.blue)
+export const logWarn = logVerbose(verbosityLabels['warn'], console.log, true, chalk.yellow)
+export const logNotice = logVerbose(verbosityLabels['info'], console.log, true, chalk.blue)
 export const logInfo = logVerbose(verbosityLabels['info']) // the 'regular' log function
 export const logDebug = logVerbose(verbosityLabels['debug'])
 export const log = logInfo
