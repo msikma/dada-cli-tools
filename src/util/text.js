@@ -68,13 +68,47 @@ export const capitalizeFirst = (str) => (
 )
 
 /**
+ * Cuts a long description down to a specific length, going by paragraphs.
+ * Reduces the length of a description.
+ */
+export const limitStringParagraph = (maxLength = 700, errorRatio = 100) => (desc) => {
+  // Low and high end.
+  const low = maxLength - errorRatio
+  const high = maxLength + errorRatio
+
+  // If str is already within tolerance, leave it.
+  if (desc.length < high) {
+    return desc
+  }
+  // Split into paragraphs, then keep removing one until we reach the tolerance point.
+  // If we accidentally go too low, making a description that is too short,
+  // we'll instead add a paragraph back on and cull the description with an ellipsis.
+  const bits = desc.split('\n\n')
+  if (bits.length === 1) {
+    return limitStringSentence(maxLength)(bits[0])
+  }
+  let item
+  while ((item = bits.pop()) != null) {
+    const remainder = bits.join('\n\n')
+    if (remainder.length < high && remainder.length > low) {
+      // Perfect.
+      return `${remainder}\n\n[...]`
+    }
+    if (remainder.length < high && remainder.length < low) {
+      // Too small. TODO: cut off words one at a time instead?
+      return `${[remainder, item].join('\n\n').substr(0, maxLength)} [...]`
+    }
+  }
+}
+
+/**
  * Cuts a long description down to a specific length, removing whole sentences.
  * Returns a function for a given value to cut the text down to.
  */
-export const limitStringSentence = (limit = 700) => (desc) => {
-  if (desc.length < limit) return desc
+export const limitStringSentence = (maxLength = 700) => (desc) => {
+  if (desc.length < maxLength) return desc
 
-  const limitedChars = desc.slice(0, limit)
+  const limitedChars = desc.slice(0, maxLength)
   // Cut off the last line so we don't end on a half-sentence.
   const limitedLines = limitedChars
     .split('\n')
