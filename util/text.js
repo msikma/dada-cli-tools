@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.charTrim = exports.splitOnLast = exports.limitString = exports.limitStringSentence = exports.capitalizeFirst = exports.separateMarkdownImages = exports.ensurePeriod = exports.removeUnnecessaryLines = exports.trimInner = exports.removeEmptyLines = exports.escapeMarkdown = void 0;
+exports.charTrim = exports.splitOnLast = exports.limitString = exports.limitStringSentence = exports.limitStringParagraph = exports.capitalizeFirst = exports.separateMarkdownImages = exports.ensurePeriod = exports.removeUnnecessaryLines = exports.trimInner = exports.removeEmptyLines = exports.escapeMarkdown = void 0;
 
 var _markdownEscape = _interopRequireDefault(require("markdown-escape"));
 
@@ -90,16 +90,58 @@ exports.separateMarkdownImages = separateMarkdownImages;
 
 const capitalizeFirst = str => `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 /**
- * Cuts a long description down to a specific length, removing whole sentences.
- * Returns a function for a given value to cut the text down to.
+ * Cuts a long description down to a specific length, going by paragraphs.
+ * Reduces the length of a description.
  */
 
 
 exports.capitalizeFirst = capitalizeFirst;
 
-const limitStringSentence = (limit = 700) => desc => {
-  if (desc.length < limit) return desc;
-  const limitedChars = desc.slice(0, limit); // Cut off the last line so we don't end on a half-sentence.
+const limitStringParagraph = (maxLength = 700, errorRatio = 100) => desc => {
+  // Low and high end.
+  const low = maxLength - errorRatio;
+  const high = maxLength + errorRatio; // If str is already within tolerance, leave it.
+
+  if (desc.length < high) {
+    return desc;
+  } // Split into paragraphs, then keep removing one until we reach the tolerance point.
+  // If we accidentally go too low, making a description that is too short,
+  // we'll instead add a paragraph back on and cull the description with an ellipsis.
+
+
+  const bits = desc.split('\n\n');
+
+  if (bits.length === 1) {
+    return limitStringSentence(maxLength)(bits[0]);
+  }
+
+  let item;
+
+  while ((item = bits.pop()) != null) {
+    const remainder = bits.join('\n\n');
+
+    if (remainder.length < high && remainder.length > low) {
+      // Perfect.
+      return `${remainder}\n\n[...]`;
+    }
+
+    if (remainder.length < high && remainder.length < low) {
+      // Too small. TODO: cut off words one at a time instead?
+      return `${[remainder, item].join('\n\n').substr(0, maxLength)} [...]`;
+    }
+  }
+};
+/**
+ * Cuts a long description down to a specific length, removing whole sentences.
+ * Returns a function for a given value to cut the text down to.
+ */
+
+
+exports.limitStringParagraph = limitStringParagraph;
+
+const limitStringSentence = (maxLength = 700) => desc => {
+  if (desc.length < maxLength) return desc;
+  const limitedChars = desc.slice(0, maxLength); // Cut off the last line so we don't end on a half-sentence.
 
   const limitedLines = limitedChars.split('\n').slice(0, -1).join('\n').trim();
   return `${limitedLines}\n[...]`;
