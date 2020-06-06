@@ -22,6 +22,7 @@ The items included here were all created as needed while making CLI tools in the
 | `util/output`| Printing data in various forms (JSON, XML, etc)             |
 | `util/promise` | Promise-related helper functions                          |
 | `util/query` | URL string manipulation                                     |
+| `util/slug`  | String slug generator                                       |
 | `util/text`  | Text manipulation helper functions                          |
 | `util/vm`    | Helper functions for extracting data from JS script tags    |
 | `util/xml`   | XML manipulation functions                                  |

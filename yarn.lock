@@ -4554,6 +4554,11 @@ stack-utils@^1.0.1:
   resolved "https://registry.yarnpkg.com/stack-utils/-/stack-utils-1.0.2.tgz#33eba3897788558bebfc2db059dc158ec36cebb8"
   integrity sha512-MTX+MeG5U994cazkjd/9KNAapsHnibjMLnfXodlkXw76JEea0UiNzrqidzo1emMwk7w5Qhc9jd4Bn9TBb1MFwA==
 
+standard-slugify@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/standard-slugify/-/standard-slugify-2.0.1.tgz#1c586ca76a66a2a8d339080daf9a0a8b8d8ecb60"
+  integrity sha512-C8/dNawmbjdz8/JIjx5If+owC6BlDFjgaMZFNE3T77Zi2bWzhZKIzyNLaWvfmMq2ew+1gZ3P2XlT+y2SNTUbhQ==
+
 static-extend@^0.1.1:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/static-extend/-/static-extend-0.1.2.tgz#60809c39cbff55337226fd5e0b520f341f1fb5c6"
