@@ -42,7 +42,7 @@ export const splitFilename = filename => {
  * TODO: this should be simplified, by getting a full list of files and then
  * determining the new name once, rather than checking each possibility.
  */
-export const getSafeFilename = async (target, separator = '', limit = MAX_FILENAME_RETRIES) => {
+export const getSafeFilename = async (target, separator = '', allowSafeFilename = true, limit = MAX_FILENAME_RETRIES) => {
   const { basename, extension } = splitFilename(target)
 
   let targetName = { basename, suffix: 0 }, targetNameStr
@@ -54,7 +54,7 @@ export const getSafeFilename = async (target, separator = '', limit = MAX_FILENA
       targetName.suffix += 1
 
       // If we've tried too many times, fail and return information.
-      if (targetName.suffix >= limit) {
+      if (allowSafeFilename || targetName.suffix >= limit) {
         return {
           success: false,
           attempts: targetName.suffix,

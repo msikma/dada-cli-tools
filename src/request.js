@@ -57,7 +57,7 @@ export const downloadFileLogged = (url, target, opts = {}) => {
  */
 export const downloadFile = async (url, target, opts = {}) => {
   const { logFn } = opts
-  const safeFn = await getSafeFilename(target)
+  const safeFn = await getSafeFilename(target, '', opts.allowRenaming)
   if (!safeFn.success) {
     return safeFn
   }

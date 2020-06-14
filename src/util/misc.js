@@ -10,6 +10,11 @@ export const wait = (ms) => (
   ))
 )
 
+/** Pads a number with zeroes based on a maximum value. */
+export const zeroPadMax = (a, z) => (
+  String(a).padStart(Math.ceil(Math.log10(z + 1)), '0')
+)
+
 /** Sorts an object by keys. */
 export const sortByKeys = obj => (
   fromPairs(sortBy(toPairs(obj)))
