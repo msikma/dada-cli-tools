@@ -23,9 +23,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const dataDescriptions = {
   json: `JSON string`,
   xml: 'XML string',
-  terminal: 'Plain text readable in terminal' // The default output type.
+  terminal: 'Plain text readable in terminal'
+}; // The default output type.
 
-};
 exports.dataDescriptions = dataDescriptions;
 const dataDefaultType = 'terminal';
 /** Takes an output type string and returns it verbatim if it's valid, or the default if it's not. */
@@ -134,9 +134,9 @@ const dataTypes = {
   json: outputJSON,
   xml: _xml.outputXML,
   terminal: outputTerminal
-  /** Outputs data using the given output type (JSON, XML, Terminal). */
-
 };
+/** Outputs data using the given output type (JSON, XML, Terminal). */
+
 exports.dataTypes = dataTypes;
 
 const outputByType = (obj, type) => {

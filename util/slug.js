@@ -13,9 +13,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // © MIT license
 const slugifyDefaults = {
   keepCase: true
-  /** Slugify function that uses underscores as separators. */
-
 };
+/** Slugify function that uses underscores as separators. */
 
 const slugifyUnderscore = (str, opts) => {
   const slug = slugify(str, opts);

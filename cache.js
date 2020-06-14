@@ -25,9 +25,8 @@ const settings = {
   baseDir: (0, _fs2.resolveTilde)('~/.cache/'),
   // 10 minutes in seconds.
   validSeconds: 600
-  /** Sets the base directory used for cache filenames. */
-
 };
+/** Sets the base directory used for cache filenames. */
 
 const setBaseDir = baseDir => settings.baseDir = baseDir;
 /** Sets the duration that a cache file is valid in seconds. */

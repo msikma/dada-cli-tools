@@ -67,7 +67,7 @@ const splitFilename = filename => {
 
 exports.splitFilename = splitFilename;
 
-const getSafeFilename = async (target, separator = '', limit = MAX_FILENAME_RETRIES) => {
+const getSafeFilename = async (target, separator = '', allowSafeFilename = true, limit = MAX_FILENAME_RETRIES) => {
   const {
     basename,
     extension
@@ -85,7 +85,7 @@ const getSafeFilename = async (target, separator = '', limit = MAX_FILENAME_RETR
     if (await fileExists(targetNameStr)) {
       targetName.suffix += 1; // If we've tried too many times, fail and return information.
 
-      if (targetName.suffix >= limit) {
+      if (allowSafeFilename || targetName.suffix >= limit) {
         return {
           success: false,
           attempts: targetName.suffix,

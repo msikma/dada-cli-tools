@@ -14,11 +14,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Provides 'window' by default to be more compatible with common <script> contents.
 const DEFAULT_SANDBOX = {
   window: {}
-  /**
-   * Runs a script inside of a sandboxed VM to extract its data.
-   */
-
 };
+/**
+ * Runs a script inside of a sandboxed VM to extract its data.
+ */
 
 const extractScriptResult = (scriptContent, sandbox = DEFAULT_SANDBOX) => {
   let success,

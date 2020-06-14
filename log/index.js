@@ -42,13 +42,13 @@ const verbosityLabels = {
   warn: 6,
   info: 4,
   debug: 0,
-  quiet: -1 // By default we only show logs of priority 4 and up.
+  quiet: -1
+}; // By default we only show logs of priority 4 and up.
 
-};
 const options = {
-  verbosity: verbosityLabels[logDefaultLevel] // Regex used to colorize certain log patterns.
+  verbosity: verbosityLabels[logDefaultLevel]
+}; // Regex used to colorize certain log patterns.
 
-};
 const HTTP_PROTOCOL = new RegExp('^\s?https?://');
 const ABS_REL_PATH = new RegExp('^\s?\.?/');
 /** Sets the desired logging verbosity. The value must be either a number or a string. */

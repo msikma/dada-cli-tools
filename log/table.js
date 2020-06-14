@@ -43,9 +43,8 @@ const assets = {
   headerVCrossBottom: '╨',
   // Default colors
   headerColor: _chalk.default.red
-  /** Returns an array range, e.g. [0, 1, 2, 3, 4] for 5. */
-
 };
+/** Returns an array range, e.g. [0, 1, 2, 3, 4] for 5. */
 
 const range = len => new Array(len).fill().map((_, n) => n);
 /** Returns the size of the largest member of an array. */

@@ -37,12 +37,11 @@ const stdHeaders = {
   'TE': 'Trailers',
   'Upgrade-Insecure-Requests': '1',
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:68.0) Gecko/20100101 Firefox/68.0'
-  /**
-   * Returns the attributes needed to make a POST request.
-   * The output should be merged into a Got request object.
-   */
-
 };
+/**
+ * Returns the attributes needed to make a POST request.
+ * The output should be merged into a Got request object.
+ */
 
 const postAttributes = (postData, {
   urlEncoded
@@ -81,7 +80,7 @@ const downloadFile = async (url, target, opts = {}) => {
   const {
     logFn
   } = opts;
-  const safeFn = await (0, _fs2.getSafeFilename)(target);
+  const safeFn = await (0, _fs2.getSafeFilename)(target, '', opts.allowRenaming);
 
   if (!safeFn.success) {
     return safeFn;
