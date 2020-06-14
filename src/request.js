@@ -7,6 +7,7 @@ import { promisify } from 'util'
 import { isEmpty } from 'lodash'
 import chalk from 'chalk'
 import stream from 'stream'
+import Url from 'url-parse'
 
 import { getSafeFilename, fileExists } from './util/fs'
 import { logDebug } from './log'
@@ -41,6 +42,16 @@ const postAttributes = (postData, { urlEncoded }) => {
   else {
     throw new Error('POST requests without application/x-www-form-urlencoded is not implemented yet.')
   }
+}
+
+/**
+ * Returns the base part of a URL.
+ * 
+ * E.g. if given "https://domain.com/something/", this returns "http://domain.com".
+ */
+export const getBaseURL = url => {
+  const urlData = new Url(url)
+  return urlData.origin
 }
 
 /**

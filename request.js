@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.request = exports.makeGotRequest = exports.requestLogged = exports.downloadFile = exports.downloadFileLogged = void 0;
+exports.request = exports.makeGotRequest = exports.requestLogged = exports.downloadFile = exports.downloadFileLogged = exports.getBaseURL = void 0;
 
 var _fs = require("fs");
 
@@ -16,6 +16,8 @@ var _lodash = require("lodash");
 var _chalk = _interopRequireDefault(require("chalk"));
 
 var _stream = _interopRequireDefault(require("stream"));
+
+var _urlParse = _interopRequireDefault(require("url-parse"));
 
 var _fs2 = require("./util/fs");
 
@@ -58,9 +60,22 @@ const postAttributes = (postData, {
   }
 };
 /**
+ * Returns the base part of a URL.
+ * 
+ * E.g. if given "https://domain.com/something/", this returns "http://domain.com".
+ */
+
+
+const getBaseURL = url => {
+  const urlData = new _urlParse.default(url);
+  return urlData.origin;
+};
+/**
  * Wrapper for downloadFile() that adds the standard logger for CLI purposes.
  */
 
+
+exports.getBaseURL = getBaseURL;
 
 const downloadFileLogged = (url, target, opts = {}) => {
   return downloadFile(url, target, { ...opts,
