@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.request = exports.makeGotRequest = exports.requestLogged = exports.downloadFile = exports.downloadFileLogged = exports.getBaseURL = void 0;
+exports.request = exports.makeGotRequest = exports.requestLogged = exports.downloadFile = exports.downloadFileLogged = exports.getBaseURL = exports.getURLFilename = void 0;
 
 var _fs = require("fs");
 
@@ -60,11 +60,29 @@ const postAttributes = (postData, {
   }
 };
 /**
+ * Returns the filename of a URL.
+ * 
+ * E.g. if given "https://domain.com/path/something.jpg", this returns "something.jpg".
+ */
+
+
+const getURLFilename = url => {
+  const urlData = new _urlParse.default(url);
+  const {
+    path
+  } = urlData;
+  if (!path) return null;
+  const fn = path.trim().split('/').pop();
+  return fn;
+};
+/**
  * Returns the base part of a URL.
  * 
  * E.g. if given "https://domain.com/something/", this returns "http://domain.com".
  */
 
+
+exports.getURLFilename = getURLFilename;
 
 const getBaseURL = url => {
   const urlData = new _urlParse.default(url);

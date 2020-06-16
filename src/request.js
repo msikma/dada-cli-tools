@@ -45,6 +45,19 @@ const postAttributes = (postData, { urlEncoded }) => {
 }
 
 /**
+ * Returns the filename of a URL.
+ * 
+ * E.g. if given "https://domain.com/path/something.jpg", this returns "something.jpg".
+ */
+export const getURLFilename = url => {
+  const urlData = new Url(url)
+  const { path } = urlData
+  if (!path) return null
+  const fn = path.trim().split('/').pop()
+  return fn
+}
+
+/**
  * Returns the base part of a URL.
  * 
  * E.g. if given "https://domain.com/something/", this returns "http://domain.com".
