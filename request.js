@@ -69,10 +69,10 @@ const postAttributes = (postData, {
 const getURLFilename = url => {
   const urlData = new _urlParse.default(url);
   const {
-    path
+    pathname
   } = urlData;
-  if (!path) return null;
-  const fn = path.trim().split('/').pop();
+  if (!pathname) return null;
+  const fn = pathname.trim().split('/').pop();
   return fn;
 };
 /**

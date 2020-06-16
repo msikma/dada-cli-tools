@@ -51,9 +51,9 @@ const postAttributes = (postData, { urlEncoded }) => {
  */
 export const getURLFilename = url => {
   const urlData = new Url(url)
-  const { path } = urlData
-  if (!path) return null
-  const fn = path.trim().split('/').pop()
+  const { pathname } = urlData
+  if (!pathname) return null
+  const fn = pathname.trim().split('/').pop()
   return fn
 }
 
