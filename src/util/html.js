@@ -1,7 +1,7 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-import { isFunction } from 'lodash'
+import { isFunction, uniq } from 'lodash'
 import TurndownService from 'turndown'
 import cheerio from 'cheerio'
 
@@ -107,6 +107,8 @@ export const isHTML = (string) => {
     string.indexOf('<p>') > 0,
     string.indexOf('<strong>') > 0,
     string.indexOf('<img') > 0,
+    string.indexOf('<span') > 0,
+    string.indexOf('<div') > 0,
     string.indexOf('<br /') > 0,
     string.indexOf('<br/') > 0,
     string.indexOf('<br>') > 0,
@@ -131,7 +133,9 @@ export const blockElsToLb = ($text) => {
  * Returns image URLs from an HTML string.
  */
 export const getImagesFromHTML = (html) => {
-  const $ = cheerio.load(`<div id="callisto-wrapper">${html}</div>`)
-  const $html = $('#calypso-wrapper')
-  return $html.find('img').get().map(i => $(i).attr('src'))
+  const $ = cheerio.load(`<div id="dada-cli-tools-cheerio-wrapper">${html}</div>`)
+  const $html = $('#dada-cli-tools-cheerio-wrapper')
+  return uniq($html
+    .find('img').get()
+    .map(i => $(i).attr('src')))
 }

@@ -132,7 +132,7 @@ const htmlToMarkdown = (html, {
 exports.htmlToMarkdown = htmlToMarkdown;
 
 const isHTML = string => {
-  const items = [string.indexOf('<p>') > 0, string.indexOf('<strong>') > 0, string.indexOf('<img') > 0, string.indexOf('<br /') > 0, string.indexOf('<br/') > 0, string.indexOf('<br>') > 0, string.indexOf('href="') > 0];
+  const items = [string.indexOf('<p>') > 0, string.indexOf('<strong>') > 0, string.indexOf('<img') > 0, string.indexOf('<span') > 0, string.indexOf('<div') > 0, string.indexOf('<br /') > 0, string.indexOf('<br/') > 0, string.indexOf('<br>') > 0, string.indexOf('href="') > 0];
   return items.indexOf(true) > -1;
 };
 /** List of block elements. (Non-exhaustive, but it works well enough for most cases.) */
@@ -158,10 +158,10 @@ const blockElsToLb = $text => {
 exports.blockElsToLb = blockElsToLb;
 
 const getImagesFromHTML = html => {
-  const $ = _cheerio.default.load(`<div id="callisto-wrapper">${html}</div>`);
+  const $ = _cheerio.default.load(`<div id="dada-cli-tools-cheerio-wrapper">${html}</div>`);
 
-  const $html = $('#calypso-wrapper');
-  return $html.find('img').get().map(i => $(i).attr('src'));
+  const $html = $('#dada-cli-tools-cheerio-wrapper');
+  return (0, _lodash.uniq)($html.find('img').get().map(i => $(i).attr('src')));
 };
 
 exports.getImagesFromHTML = getImagesFromHTML;
