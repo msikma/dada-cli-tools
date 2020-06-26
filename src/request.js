@@ -70,8 +70,8 @@ export const getBaseURL = url => {
 /**
  * Wrapper for downloadFile() that adds the standard logger for CLI purposes.
  */
-export const downloadFileLogged = (url, target, opts = {}) => {
-  return downloadFile(url, target, { ...opts, logFn: logDebug })
+export const downloadFileLogged = (url, target, opts = {}, customOpts = {}) => {
+  return downloadFile(url, target, { ...opts, logFn: logDebug }, customOpts)
 }
 
 /**
@@ -79,26 +79,41 @@ export const downloadFileLogged = (url, target, opts = {}) => {
  *
  * Useful for downloading files.
  */
-export const downloadFile = async (url, target, opts = {}) => {
-  const { logFn } = opts
+export const downloadFile = async (url, target, opts = {}, customOpts = {}) => {
+  const { logFn, cleanupOnError = true } = opts
   const safeFn = await getSafeFilename(target, '', opts.allowRenaming)
-  if (!safeFn.success) {
-    return safeFn
-  }
-
   const { targetFilename } = safeFn
-  const req = makeGotRequest(url, { ...opts, returnStream: true })
 
-  logFn && logFn('Saving to file:', chalk.green(targetFilename), safeFn.hasModifiedFilename ? `(file already existed: ${chalk.yellow(target)})` : null)
+  try {
+    if (!safeFn.success) {
+      return { success: false, ...safeFn }
+    }
+    const req = makeGotRequest(url, { ...opts, returnStream: true }, customOpts)
 
-  // Wait for the file to finish downloading and saving to the target.
-  await pipeline(req, createWriteStream(targetFilename))
+    logFn && logFn('Saving to file:', chalk.green(targetFilename), safeFn.hasModifiedFilename ? `(file already existed: ${chalk.yellow(target)})` : null)
 
-  // Check if the target successfully got saved.
-  const reqSuccess = await fileExists(targetFilename)
-  return {
-    ...safeFn,
-    success: reqSuccess
+    // Wait for the file to finish downloading and saving to the target.
+    await pipeline(req, createWriteStream(targetFilename))
+
+    // Check if the target successfully got saved.
+    const reqSuccess = await fileExists(targetFilename)
+    return {
+      ...safeFn,
+      success: reqSuccess
+    }
+  }
+  catch (err) {
+    let exists = await fileExists(targetFilename)
+    if (exists && cleanupOnError) {
+      await fs.unlink(targetFilename)
+    }
+    exists = await fileExists(targetFilename)
+    return {
+      ...safeFn,
+      success: false,
+      error: err,
+      cleanedUp: !exists
+    }
   }
 }
 
