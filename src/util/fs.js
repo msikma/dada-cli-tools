@@ -36,6 +36,14 @@ export const splitFilename = filename => {
 }
 
 /**
+ * Changes a file's extension.
+ */
+export const changeExtension = (filename, ext) => {
+  const { basename } = splitFilename(filename)
+  return `${basename}.${ext}`
+}
+
+/**
  * Determines a filename that does not exist yet.
  *
  * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.

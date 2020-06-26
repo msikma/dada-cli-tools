@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.splitFilename = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.changeExtension = exports.splitFilename = exports.resolveTilde = void 0;
 
 var _fs = require("fs");
 
@@ -57,6 +57,19 @@ const splitFilename = filename => {
   };
 };
 /**
+ * Changes a file's extension.
+ */
+
+
+exports.splitFilename = splitFilename;
+
+const changeExtension = (filename, ext) => {
+  const {
+    basename
+  } = splitFilename(filename);
+  return `${basename}.${ext}`;
+};
+/**
  * Determines a filename that does not exist yet.
  *
  * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.
@@ -65,7 +78,7 @@ const splitFilename = filename => {
  */
 
 
-exports.splitFilename = splitFilename;
+exports.changeExtension = changeExtension;
 
 const getSafeFilename = async (target, separator = '', allowSafeFilename = true, limit = MAX_FILENAME_RETRIES) => {
   const {
