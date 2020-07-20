@@ -15,6 +15,11 @@ export const zeroPadMax = (a, z) => (
   String(a).padStart(Math.ceil(Math.log10(z + 1)), '0')
 )
 
+/**
+ * Turns an array into an object of keys all set to true.
+ */
+export const toKeys = arr => arr.reduce((all, item) => ({ ...all, [item]: true }), {})
+
 /** Sorts an object by keys. */
 export const sortByKeys = obj => (
   fromPairs(sortBy(toPairs(obj)))
