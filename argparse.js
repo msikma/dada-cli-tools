@@ -104,9 +104,18 @@ const makeArgParser = opts => {
           // Add a header string in front of it.
           let buffer = originalFormatHelp().split('\n');
           this.sections.forEach(section => {
+            let addedHeader = false;
             buffer = buffer.map(line => {
               // Find the first argument that this section should be directly above.
-              return this.hasArgument(section.match, line) ? `\n${section.header}\n${line}` : line;
+              if (addedHeader) return line;
+              const hasArg = this.hasArgument(section.match, line);
+
+              if (hasArg) {
+                addedHeader = true;
+                return `\n${section.header}\n${line}`;
+              }
+
+              return line;
             });
           }); // Format the extra multiple choice sections.
 

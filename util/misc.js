@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.sortByKeys = exports.zeroPadMax = exports.wait = void 0;
+exports.sortByKeys = exports.toKeys = exports.zeroPadMax = exports.wait = void 0;
 
 var _lodash = require("lodash");
 
@@ -18,10 +18,20 @@ const wait = ms => new Promise(resolve => setInterval(() => resolve(), ms));
 exports.wait = wait;
 
 const zeroPadMax = (a, z) => String(a).padStart(Math.ceil(Math.log10(z + 1)), '0');
-/** Sorts an object by keys. */
+/**
+ * Turns an array into an object of keys all set to true.
+ */
 
 
 exports.zeroPadMax = zeroPadMax;
+
+const toKeys = arr => arr.reduce((all, item) => ({ ...all,
+  [item]: true
+}), {});
+/** Sorts an object by keys. */
+
+
+exports.toKeys = toKeys;
 
 const sortByKeys = obj => (0, _lodash.fromPairs)((0, _lodash.sortBy)((0, _lodash.toPairs)(obj)));
 
