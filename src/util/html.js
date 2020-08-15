@@ -130,6 +130,16 @@ export const blockElsToLb = ($text) => {
 }
 
 /**
+ * Finds a tag with a specific content.
+ */
+export const findTagContent = ($, tag, contentHint) => {
+  return $(tag)
+    .filter((_, el) => ~$(el).html().indexOf(contentHint))
+    .map((_, el) => $(el).html())
+    .get()[0]
+}
+
+/**
  * Returns image URLs from an HTML string.
  */
 export const getImagesFromHTML = (html) => {
