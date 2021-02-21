@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.sortByKeys = exports.toKeys = exports.zeroPadMax = exports.wait = void 0;
+exports.sortByKeys = exports.toKeys = exports.isEmpty = exports.zipObj = exports.zeroPadMax = exports.wait = void 0;
 
 var _lodash = require("lodash");
 
@@ -18,12 +18,26 @@ const wait = ms => new Promise(resolve => setInterval(() => resolve(), ms));
 exports.wait = wait;
 
 const zeroPadMax = (a, z) => String(a).padStart(Math.ceil(Math.log10(z + 1)), '0');
+/** Zips two arrays into an object. */
+
+
+exports.zeroPadMax = zeroPadMax;
+
+const zipObj = (a, b) => a.reduce((obj, _, n) => ({ ...obj,
+  [a[n]]: b[n]
+}), {});
+/** Checks whether a plain object is empty. */
+
+
+exports.zipObj = zipObj;
+
+const isEmpty = obj => Object.keys(obj).length === 0;
 /**
  * Turns an array into an object of keys all set to true.
  */
 
 
-exports.zeroPadMax = zeroPadMax;
+exports.isEmpty = isEmpty;
 
 const toKeys = arr => arr.reduce((all, item) => ({ ...all,
   [item]: true
