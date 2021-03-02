@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getImagesFromHTML = exports.blockElsToLb = exports.isHTML = exports.htmlToMarkdown = exports.getLargestImageSrcset = exports.getWikiArticleAbstract = exports.makeLinksAbsolute = void 0;
+exports.getImagesFromHTML = exports.findTagContent = exports.blockElsToLb = exports.isHTML = exports.htmlToMarkdown = exports.getLargestImageSrcset = exports.getWikiArticleAbstract = exports.makeLinksAbsolute = void 0;
 
 var _lodash = require("lodash");
 
@@ -151,11 +151,21 @@ const blockElsToLb = $text => {
   $text.find('hr').replaceWith('\n');
 };
 /**
- * Returns image URLs from an HTML string.
+ * Finds a tag with a specific content.
  */
 
 
 exports.blockElsToLb = blockElsToLb;
+
+const findTagContent = ($, tag, contentHint) => {
+  return $(tag).filter((_, el) => ~$(el).html().indexOf(contentHint)).map((_, el) => $(el).html()).get()[0];
+};
+/**
+ * Returns image URLs from an HTML string.
+ */
+
+
+exports.findTagContent = findTagContent;
 
 const getImagesFromHTML = html => {
   const $ = _cheerio.default.load(`<div id="dada-cli-tools-cheerio-wrapper">${html}</div>`);
