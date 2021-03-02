@@ -12,29 +12,33 @@ import { dirName, ensureDir, resolveTilde } from './util/fs'
  * Loads cookies from a specified cookies.txt - and errors out, exiting the process
  * if something goes wrong. Used for CLI apps that cannot proceed without one.
  */
-export const loadCookiesLogged = async (cookiePath, createNew = false, failQuietly = false, canDie = true) => {
-  try {
-    const res = await loadCookies(cookiePath, createNew, failQuietly)
-    if (res.err) {
-      if (canDie) die(String(res.err))
-      else log(String(res.err))
+export const loadCookiesLogged = async (cookiePath, createNew = false, failQuietly = false, canDie = true) => (
+  new Promise(async (resolve, reject) => {
+    try {
+      const res = await loadCookies(cookiePath, createNew, failQuietly)
+      if (res.error) {
+        if (canDie) die(String(res.error))
+        else log(String(res.error))
+      }
+      if (res.madeNew) {
+        log('Created new cookies file:', res.file)
+      }
+      if (res.file) {
+        log('Found cookies file:', res.file)
+      }
+      return resolve(res)
     }
-    if (res.madeNew) {
-      log('Created new cookies file:', res.file)
+    catch (e) {
+      if (~String(e.error).indexOf('Could not find cookies file')) {
+        log('Could not find cookies file:', cookiePath)
+      }
+      else {
+        log(String(e.error))
+      }
+      return reject({ error: e, jar: null, file: null })
     }
-    if (res.file) {
-      log('Found cookies file:', res.file)
-    }
-  }
-  catch (e) {
-    if (~String(e.error).indexOf('Could not find cookies file')) {
-      log('Could not find cookies file:', cookiePath)
-      return
-    }
-    log(String(e.error))
-    return
-  }
-}
+  })
+)
 
 /**
  * Loads cookies from a specified cookies.txt file and loads them into

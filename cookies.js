@@ -24,12 +24,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Loads cookies from a specified cookies.txt - and errors out, exiting the process
  * if something goes wrong. Used for CLI apps that cannot proceed without one.
  */
-const loadCookiesLogged = async (cookiePath, createNew = false, failQuietly = false, canDie = true) => {
+const loadCookiesLogged = async (cookiePath, createNew = false, failQuietly = false, canDie = true) => new Promise(async (resolve, reject) => {
   try {
     const res = await loadCookies(cookiePath, createNew, failQuietly);
 
-    if (res.err) {
-      if (canDie) (0, _log.die)(String(res.err));else (0, _log.log)(String(res.err));
+    if (res.error) {
+      if (canDie) (0, _log.die)(String(res.error));else (0, _log.log)(String(res.error));
     }
 
     if (res.madeNew) {
@@ -39,16 +39,22 @@ const loadCookiesLogged = async (cookiePath, createNew = false, failQuietly = fa
     if (res.file) {
       (0, _log.log)('Found cookies file:', res.file);
     }
+
+    return resolve(res);
   } catch (e) {
     if (~String(e.error).indexOf('Could not find cookies file')) {
       (0, _log.log)('Could not find cookies file:', cookiePath);
-      return;
+    } else {
+      (0, _log.log)(String(e.error));
     }
 
-    (0, _log.log)(String(e.error));
-    return;
+    return reject({
+      error: e,
+      jar: null,
+      file: null
+    });
   }
-};
+});
 /**
  * Loads cookies from a specified cookies.txt file and loads them into
  * a jar so that we can make requests with them.
