@@ -2,6 +2,7 @@
 // © MIT license
 
 import vm from 'vm'
+import { cloneDeep } from 'lodash'
 
 // Provides 'window' by default to be more compatible with common <script> contents.
 const DEFAULT_SANDBOX = { window: {} }
@@ -9,7 +10,8 @@ const DEFAULT_SANDBOX = { window: {} }
 /**
  * Runs a script inside of a sandboxed VM to extract its data.
  */
-export const extractScriptResult = (scriptContent, sandbox = DEFAULT_SANDBOX) => {
+export const extractScriptResult = (scriptContent, scriptSandbox = null) => {
+  const sandbox = scriptSandbox ? scriptSandbox : cloneDeep(DEFAULT_SANDBOX)
   let success, error, value = null
   try {
     const script = new vm.Script(scriptContent)

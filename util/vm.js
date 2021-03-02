@@ -7,6 +7,8 @@ exports.extractScriptResult = void 0;
 
 var _vm = _interopRequireDefault(require("vm"));
 
+var _lodash = require("lodash");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
@@ -19,7 +21,8 @@ const DEFAULT_SANDBOX = {
  * Runs a script inside of a sandboxed VM to extract its data.
  */
 
-const extractScriptResult = (scriptContent, sandbox = DEFAULT_SANDBOX) => {
+const extractScriptResult = (scriptContent, scriptSandbox = null) => {
+  const sandbox = scriptSandbox ? scriptSandbox : (0, _lodash.cloneDeep)(DEFAULT_SANDBOX);
   let success,
       error,
       value = null;
