@@ -190,7 +190,7 @@ exports.readCacheDataLogged = readCacheDataLogged;
 
 const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
   const dir = `${settings.configDir}${dirname}`;
-  const path = `${dir}/coanfig.json`;
+  const path = `${dir}/config.json`;
   const configDefaults = (0, _lodash.cloneDeep)(defaults);
   doLogging && (0, _log.logDebug)('Reading config from file', path);
   const exists = await _fs.default.promises.access(dir);

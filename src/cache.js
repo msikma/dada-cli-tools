@@ -136,7 +136,7 @@ export const readCacheDataLogged = partialRight(readCacheData, true)
  */
 export const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
   const dir = `${settings.configDir}${dirname}`
-  const path = `${dir}/coanfig.json`
+  const path = `${dir}/config.json`
   const configDefaults = cloneDeep(defaults)
   doLogging && logDebug('Reading config from file', path)
   
