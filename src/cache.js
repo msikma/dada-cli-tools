@@ -108,8 +108,10 @@ export const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = tr
   // Ensure the cache dir exists. TODO: need an error handler here
   if (makeDir) {
     const dir = dirname(path)
-    const exists = await fs.promises.access(dir)
-    if (!exists) {
+    try {
+      await fs.promises.access(dir)
+    }
+    catch (err) {
       doLogging && logDebug('Needed to make directory', dir)
       await ensureDir(dir)
     }
@@ -140,8 +142,10 @@ export const getUserConfig = async (dirname, defaults = {}, doLogging = true) =>
   const configDefaults = cloneDeep(defaults)
   doLogging && logDebug('Reading config from file', path)
   
-  const exists = await fs.promises.access(dir)
-  if (!exists) {
+  try {
+    await fs.promises.access(dir)
+  }
+  catch (err) {
     doLogging && logDebug('Needed to make directory', dir)
     await ensureDir(dir)
   }

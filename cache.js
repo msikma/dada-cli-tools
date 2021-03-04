@@ -155,9 +155,10 @@ const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = true, cle
 
   if (makeDir) {
     const dir = (0, _path.dirname)(path);
-    const exists = await _fs.default.promises.access(dir);
 
-    if (!exists) {
+    try {
+      await _fs.default.promises.access(dir);
+    } catch (err) {
       doLogging && (0, _log.logDebug)('Needed to make directory', dir);
       await (0, _fs2.ensureDir)(dir);
     }
@@ -193,9 +194,10 @@ const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
   const path = `${dir}/config.json`;
   const configDefaults = (0, _lodash.cloneDeep)(defaults);
   doLogging && (0, _log.logDebug)('Reading config from file', path);
-  const exists = await _fs.default.promises.access(dir);
 
-  if (!exists) {
+  try {
+    await _fs.default.promises.access(dir);
+  } catch (err) {
     doLogging && (0, _log.logDebug)('Needed to make directory', dir);
     await (0, _fs2.ensureDir)(dir);
   }
