@@ -3,7 +3,7 @@
 
 import fs from 'fs'
 import { dirname } from 'path'
-import { partialRight } from 'lodash'
+import { partialRight, cloneDeep } from 'lodash'
 
 import { logDebug } from './log'
 import { ensureDir, resolveTilde } from './util/fs'
@@ -11,13 +11,14 @@ import { ensureDir, resolveTilde } from './util/fs'
 // Setting a base directory makes it easy to run the cache functions.
 // A good path is in ~/.cache/<directory> - the user level cache store.
 const settings = {
-  baseDir: resolveTilde('~/.cache/'),
+  cacheDir: resolveTilde('~/.cache/'),
+  configDir: resolveTilde('~/.config/'),
   // 10 minutes in seconds.
   validSeconds: 600
 }
 
 /** Sets the base directory used for cache filenames. */
-export const setBaseDir = baseDir => settings.baseDir = baseDir
+export const setBaseDir = baseDir => settings.cacheDir = baseDir
 
 /** Sets the duration that a cache file is valid in seconds. */
 export const setValidSeconds = secs => settings.validSeconds = secs
@@ -25,8 +26,8 @@ export const setValidSeconds = secs => settings.validSeconds = secs
 /** Attaches the base directory to a path, unless it's an absolute path. */
 const withBaseDir = path => {
   if (path[0] === '/') return path
-  if (settings.baseDir) {
-    return settings.baseDir + path
+  if (settings.cacheDir) {
+    return settings.cacheDir + path
   }
   return path
 }
@@ -128,3 +129,38 @@ export const writeCacheLogged = partialRight(writeCache, true)
 
 /** Call readCacheData() with doLogging = true. */
 export const readCacheDataLogged = partialRight(readCacheData, true)
+
+/**
+ * Retrieves config data from ~/.config/<progname> and creates a new file
+ * if it doesn't exist.
+ */
+export const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
+  const dir = `${settings.configDir}${dirname}`
+  const path = `${dir}/coanfig.json`
+  const configDefaults = cloneDeep(defaults)
+  doLogging && logDebug('Reading config from file', path)
+  
+  const exists = await fs.promises.access(dir)
+  if (!exists) {
+    doLogging && logDebug('Needed to make directory', dir)
+    await ensureDir(dir)
+  }
+
+  let configData
+  try {
+    configData = require(path)
+    return configData
+  }
+  catch (err) {
+    // Create new file with defaults if the file wasn't found.
+    if (err.code === 'MODULE_NOT_FOUND') {
+      const success = await fs.promises.writeFile(path, JSON.stringify(configDefaults, null, 2), 'utf8')
+      doLogging && logDebug('Wrote config to file', success)
+      return configDefaults
+    }
+    // Else, pass on the error we just got.
+    else  {
+      throw err
+    }
+  }
+}

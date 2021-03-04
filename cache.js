@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.readCacheDataLogged = exports.writeCacheLogged = exports.readCacheLogged = exports.writeCache = exports.readCacheData = exports.readCache = exports.setValidSeconds = exports.setBaseDir = void 0;
+exports.getUserConfig = exports.readCacheDataLogged = exports.writeCacheLogged = exports.readCacheLogged = exports.writeCache = exports.readCacheData = exports.readCache = exports.setValidSeconds = exports.setBaseDir = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
@@ -22,13 +22,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Setting a base directory makes it easy to run the cache functions.
 // A good path is in ~/.cache/<directory> - the user level cache store.
 const settings = {
-  baseDir: (0, _fs2.resolveTilde)('~/.cache/'),
+  cacheDir: (0, _fs2.resolveTilde)('~/.cache/'),
+  configDir: (0, _fs2.resolveTilde)('~/.config/'),
   // 10 minutes in seconds.
   validSeconds: 600
 };
 /** Sets the base directory used for cache filenames. */
 
-const setBaseDir = baseDir => settings.baseDir = baseDir;
+const setBaseDir = baseDir => settings.cacheDir = baseDir;
 /** Sets the duration that a cache file is valid in seconds. */
 
 
@@ -43,8 +44,8 @@ exports.setValidSeconds = setValidSeconds;
 const withBaseDir = path => {
   if (path[0] === '/') return path;
 
-  if (settings.baseDir) {
-    return settings.baseDir + path;
+  if (settings.cacheDir) {
+    return settings.cacheDir + path;
   }
 
   return path;
@@ -180,4 +181,41 @@ const writeCacheLogged = (0, _lodash.partialRight)(writeCache, true);
 
 exports.writeCacheLogged = writeCacheLogged;
 const readCacheDataLogged = (0, _lodash.partialRight)(readCacheData, true);
+/**
+ * Retrieves config data from ~/.config/<progname> and creates a new file
+ * if it doesn't exist.
+ */
+
 exports.readCacheDataLogged = readCacheDataLogged;
+
+const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
+  const dir = `${settings.configDir}${dirname}`;
+  const path = `${dir}/coanfig.json`;
+  const configDefaults = (0, _lodash.cloneDeep)(defaults);
+  doLogging && (0, _log.logDebug)('Reading config from file', path);
+  const exists = await _fs.default.promises.access(dir);
+
+  if (!exists) {
+    doLogging && (0, _log.logDebug)('Needed to make directory', dir);
+    await (0, _fs2.ensureDir)(dir);
+  }
+
+  let configData;
+
+  try {
+    configData = require(path);
+    return configData;
+  } catch (err) {
+    // Create new file with defaults if the file wasn't found.
+    if (err.code === 'MODULE_NOT_FOUND') {
+      const success = await _fs.default.promises.writeFile(path, JSON.stringify(configDefaults, null, 2), 'utf8');
+      doLogging && (0, _log.logDebug)('Wrote config to file', success);
+      return configDefaults;
+    } // Else, pass on the error we just got.
+    else {
+        throw err;
+      }
+  }
+};
+
+exports.getUserConfig = getUserConfig;
