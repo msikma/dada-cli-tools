@@ -178,7 +178,8 @@ const makeGotRequest = (url, {
   headers = {},
   jar,
   logFn,
-  returnStream = false
+  returnStream = false,
+  streamEvents = {}
 } = {}, customOpts = {}) => {
   const postAttr = !(0, _lodash.isEmpty)(postData) ? postAttributes(postData, {
     urlEncoded
@@ -205,7 +206,13 @@ const makeGotRequest = (url, {
   logFn && logFn(reqOpts);
 
   if (returnStream) {
-    return _got.default.stream(url, reqOpts);
+    const stream = _got.default.stream(url, reqOpts);
+
+    for (const [eventName, eventFn] of Object.entries(streamEvents)) {
+      stream.on(eventName, eventFn);
+    }
+
+    return stream;
   } else {
     return (0, _got.default)(url, reqOpts);
   }
@@ -222,14 +229,16 @@ const request = async (url, {
   urlEncoded = true,
   headers = {},
   jar,
-  logFn
+  logFn,
+  streamEvents = {}
 } = {}, customOpts = {}) => {
   const req = makeGotRequest(url, {
     postData,
     urlEncoded,
     headers,
     jar,
-    logFn
+    logFn,
+    streamEvents
   }, customOpts);
   const res = await req;
   logFn && logFn('Requested URL:', res.requestUrl, '- duration:', res.timings.end - res.timings.start, 'ms', ...(!(0, _lodash.isEmpty)(postData) ? [`- sending POST${urlEncoded ? ' (urlEncoded)' : ''}:\n`, postData] : []));

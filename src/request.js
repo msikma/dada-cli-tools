@@ -127,7 +127,7 @@ export const requestLogged = (url, opts = {}) => {
 /**
  * Returns a Got request for requesting or sending data.
  */
-export const makeGotRequest = (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn, returnStream = false } = {}, customOpts = {}) => {
+export const makeGotRequest = (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn, returnStream = false, streamEvents = {} } = {}, customOpts = {}) => {
   const postAttr = !isEmpty(postData) ? postAttributes(postData, { urlEncoded }) : {}
   const reqOpts = {
     responseType: 'json',
@@ -154,7 +154,11 @@ export const makeGotRequest = (url, { postData = {}, urlEncoded = true, headers 
   logFn && logFn(reqOpts)
 
   if (returnStream) {
-    return got.stream(url, reqOpts)
+    const stream = got.stream(url, reqOpts)
+    for (const [eventName, eventFn] of Object.entries(streamEvents)) {
+      stream.on(eventName, eventFn)
+    }
+    return stream
   }
   else {
     return got(url, reqOpts)
@@ -164,8 +168,8 @@ export const makeGotRequest = (url, { postData = {}, urlEncoded = true, headers 
 /**
  * Requests a URL and returns the full response (or just the body, if specified).
  */
-export const request = async (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn } = {}, customOpts = {}) => {
-  const req = makeGotRequest(url, { postData, urlEncoded, headers, jar, logFn }, customOpts)
+export const request = async (url, { postData = {}, urlEncoded = true, headers = {}, jar, logFn, streamEvents = {} } = {}, customOpts = {}) => {
+  const req = makeGotRequest(url, { postData, urlEncoded, headers, jar, logFn, streamEvents }, customOpts)
   const res = await req
   logFn && logFn('Requested URL:', res.requestUrl, '- duration:', res.timings.end - res.timings.start, 'ms', ...(!isEmpty(postData) ? [`- sending POST${urlEncoded ? ' (urlEncoded)' : ''}:\n`, postData] : []))
   return res
