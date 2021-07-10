@@ -43,8 +43,8 @@ const isFileStale = async (cachePath, validSeconds = settings.validSeconds) => {
 /** Simple check to see if a file exists. Returns a boolean. */
 const cacheFileExists = async (cachePath) => {
   try {
-    const exists = await fs.promises.access(cachePath)
-    return exists
+    await fs.promises.access(cachePath)
+    return true
   }
   catch (e) {
     return false
