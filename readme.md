@@ -16,6 +16,7 @@ The items included here were all created as needed while making CLI tools in the
 | `log`        | Message logging to stdout and to log files                  |
 | `request`    | Requesting data over the network                            |
 | `util/error` | Helper functions for working with exceptions                |
+| `util/exec`  | Simplified external process execution                       |
 | `util/fs`    | File and path operations                                    |
 | `util/html`  | Functions for processing HTML with Cheerio                  |
 | `util/misc`  | Various small helper functions that don't fit anywhere else |
