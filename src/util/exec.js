@@ -46,9 +46,11 @@ export const cmdExec = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
   }
 
   const getOutput = () => {
-    output.stdout = output.stdout.join('')
-    output.stderr = output.stderr.join('')
-    return output
+    return {
+      ...output,
+      stdout: output.stdout.join(''),
+      stderr: output.stderr.join('')
+    }
   }
 
   cmd.stdout.on('data', (data) => {
