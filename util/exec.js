@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.cmdExec = exports.splitArgs = void 0;
+exports.execCmd = exports.splitArgs = void 0;
 
 var _child_process = require("child_process");
 
@@ -43,7 +43,7 @@ const splitArgs = cmd => {
 
 exports.splitArgs = splitArgs;
 
-const cmdExec = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
+const execCmd = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
   const args = splitArgs(cmdStr);
   const cmd = (0, _child_process.spawn)(args[0], args.slice(1), { ...opts
   });
@@ -79,4 +79,4 @@ const cmdExec = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
   });
 });
 
-exports.cmdExec = cmdExec;
+exports.execCmd = execCmd;

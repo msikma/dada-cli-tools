@@ -33,7 +33,7 @@ export const splitArgs = cmd => {
  * This allows for an external command to be run as a string,
  * as though one is running the command inside of the terminal.
  */
-export const cmdExec = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
+export const execCmd = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
   const args = splitArgs(cmdStr)
   const cmd = spawn(args[0], args.slice(1), { ...opts })
 
