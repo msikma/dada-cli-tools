@@ -13,7 +13,7 @@ import { ensureDir, resolveTilde } from './util/fs'
 const settings = {
   cacheDir: resolveTilde('~/.cache/'),
   configDir: resolveTilde('~/.config/'),
-  // 10 minutes in seconds.
+  // 10 minutes in seconds. 0 means 'never expire'.
   validSeconds: 600
 }
 
@@ -22,6 +22,9 @@ export const setBaseDir = baseDir => settings.cacheDir = baseDir
 
 /** Sets the duration that a cache file is valid in seconds. */
 export const setValidSeconds = secs => settings.validSeconds = secs
+
+/** Sets the cache to never expire. */
+export const setNeverExpire = () => settings.validSeconds = 0
 
 /** Attaches the base directory to a path, unless it's an absolute path. */
 const withBaseDir = path => {
@@ -34,6 +37,9 @@ const withBaseDir = path => {
 
 /** Checks to see if a file has gone stale. */
 const isFileStale = async (cachePath, validSeconds = settings.validSeconds) => {
+  // If validSeconds is 0, cache files never go stale.
+  if (settings.validSeconds === 0) return false
+
   const curr = (+new Date())
   const statData = await fs.promises.stat(cachePath)
   // Convert seconds to ms to compare it with stat.
@@ -63,19 +69,19 @@ const cacheFileExists = async (cachePath) => {
  *
  * In most cases, the data will be JSON that needs to be parsed. By default this does so.
  */
-export const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false, doLogging = false) => {
+export const readCache = async (cachePath, defaults = {}, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false, doLogging = false) => {
   const path = withBaseDir(cachePath)
   // If isSimple is true, it means we're not going to use the metadata. Only the file contents.
   doLogging && logDebug('Reading cache from file', isSimple ? '(no metadata)' : null, '- valid seconds', validSeconds, '- path', path)
   const exists = await cacheFileExists(path)
   if (!exists) {
     doLogging && logDebug('Cache file does not exist')
-    return { exists, isStale: null, path, validSeconds, data: null }
+    return { exists, isStale: null, path, validSeconds, data: defaults }
   }
   const isStale = await isFileStale(path, validSeconds)
   if (isStale) {
     doLogging && logDebug('Cache file is stale')
-    return { exists, isStale, path, validSeconds, data: null }
+    return { exists, isStale, path, validSeconds, data: defaults }
   }
 
   const dataRaw = await fs.promises.readFile(path)
@@ -88,10 +94,10 @@ export const readCache = async (cachePath, validSeconds = settings.validSeconds,
  * Basic cache reading function.
  *
  * Unlike readCache(), this only returns the actual file data without the metadata.
- * If there is no cache for some reason, this returns null.
+ * If there is no cache for some reason, this returns the defaults.
  */
-export const readCacheData = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, doLogging = false) => {
-  const cache = await readCache(cachePath, validSeconds, parseJSON, true, doLogging)
+export const readCacheData = async (cachePath, defaults = {}, validSeconds = settings.validSeconds, parseJSON = true, doLogging = false) => {
+  const cache = await readCache(cachePath, defaults, validSeconds, parseJSON, true, doLogging)
   return cache.data
 }
 
@@ -101,7 +107,7 @@ export const readCacheData = async (cachePath, validSeconds = settings.validSeco
  * By default this will create a new directory if it doesn't exist.
  * Returns a boolean as result.
  */
-export const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8', doLogging = false) => {
+export const writeCache = async (cachePath, dataRaw, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8', doLogging = false) => {
   const path = withBaseDir(cachePath)
   doLogging && logDebug('Writing cache to file', path)
 
