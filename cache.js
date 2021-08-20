@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getUserConfig = exports.readCacheDataLogged = exports.writeCacheLogged = exports.readCacheLogged = exports.writeCache = exports.readCacheData = exports.readCache = exports.setValidSeconds = exports.setBaseDir = void 0;
+exports.getUserConfig = exports.readCacheDataLogged = exports.writeCacheLogged = exports.readCacheLogged = exports.writeCache = exports.readCacheData = exports.readCache = exports.setNeverExpire = exports.setValidSeconds = exports.setBaseDir = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
@@ -24,7 +24,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const settings = {
   cacheDir: (0, _fs2.resolveTilde)('~/.cache/'),
   configDir: (0, _fs2.resolveTilde)('~/.config/'),
-  // 10 minutes in seconds.
+  // 10 minutes in seconds. 0 means 'never expire'.
   validSeconds: 600
 };
 /** Sets the base directory used for cache filenames. */
@@ -36,10 +36,16 @@ const setBaseDir = baseDir => settings.cacheDir = baseDir;
 exports.setBaseDir = setBaseDir;
 
 const setValidSeconds = secs => settings.validSeconds = secs;
-/** Attaches the base directory to a path, unless it's an absolute path. */
+/** Sets the cache to never expire. */
 
 
 exports.setValidSeconds = setValidSeconds;
+
+const setNeverExpire = () => settings.validSeconds = 0;
+/** Attaches the base directory to a path, unless it's an absolute path. */
+
+
+exports.setNeverExpire = setNeverExpire;
 
 const withBaseDir = path => {
   if (path[0] === '/') return path;
@@ -54,6 +60,8 @@ const withBaseDir = path => {
 
 
 const isFileStale = async (cachePath, validSeconds = settings.validSeconds) => {
+  // If validSeconds is 0, cache files never go stale.
+  if (settings.validSeconds === 0) return false;
   const curr = +new Date();
   const statData = await _fs.default.promises.stat(cachePath); // Convert seconds to ms to compare it with stat.
 
@@ -84,7 +92,7 @@ const cacheFileExists = async cachePath => {
  */
 
 
-const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false, doLogging = false) => {
+const readCache = async (cachePath, defaults = {}, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false, doLogging = false) => {
   const path = withBaseDir(cachePath); // If isSimple is true, it means we're not going to use the metadata. Only the file contents.
 
   doLogging && (0, _log.logDebug)('Reading cache from file', isSimple ? '(no metadata)' : null, '- valid seconds', validSeconds, '- path', path);
@@ -97,7 +105,7 @@ const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJ
       isStale: null,
       path,
       validSeconds,
-      data: null
+      data: defaults
     };
   }
 
@@ -110,7 +118,7 @@ const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJ
       isStale,
       path,
       validSeconds,
-      data: null
+      data: defaults
     };
   }
 
@@ -129,14 +137,14 @@ const readCache = async (cachePath, validSeconds = settings.validSeconds, parseJ
  * Basic cache reading function.
  *
  * Unlike readCache(), this only returns the actual file data without the metadata.
- * If there is no cache for some reason, this returns null.
+ * If there is no cache for some reason, this returns the defaults.
  */
 
 
 exports.readCache = readCache;
 
-const readCacheData = async (cachePath, validSeconds = settings.validSeconds, parseJSON = true, doLogging = false) => {
-  const cache = await readCache(cachePath, validSeconds, parseJSON, true, doLogging);
+const readCacheData = async (cachePath, defaults = {}, validSeconds = settings.validSeconds, parseJSON = true, doLogging = false) => {
+  const cache = await readCache(cachePath, defaults, validSeconds, parseJSON, true, doLogging);
   return cache.data;
 };
 /**
@@ -149,7 +157,7 @@ const readCacheData = async (cachePath, validSeconds = settings.validSeconds, pa
 
 exports.readCacheData = readCacheData;
 
-const writeCache = async (dataRaw, cachePath, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8', doLogging = false) => {
+const writeCache = async (cachePath, dataRaw, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8', doLogging = false) => {
   const path = withBaseDir(cachePath);
   doLogging && (0, _log.logDebug)('Writing cache to file', path); // Ensure the cache dir exists. TODO: need an error handler here
 
