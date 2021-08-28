@@ -21,7 +21,7 @@ var _child_process = require("child_process");
  * Be careful when escaping quotation marks (remember to double escape in string literals).
  */
 const splitArgs = cmd => {
-  const splitter = /"[^"\\]*(\\.[^"\\]*)*"|'[^'\\]*(\\.[^'\\]*)*'|[^\s]+/g;
+  const splitter = /([^\s"]*)"[^"\\]*(\\.[^"\\]*)*"|([^\s']*)'[^'\\]*(\\.[^'\\]*)*'|[^\s]+/g;
   const args = [];
   let item, match, inner;
 
