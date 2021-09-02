@@ -71,8 +71,9 @@ export const inspect = (obj) => {
  * 
  * If the logging function is null, the value is returned instead.
  */
-const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null, colorRegular = null) => {
-  const str = segments.filter(s => s).map((s, n) => {
+const logSegments = (segments, logFn = console.log, colorize = true, colorAll = null, colorRegular = null, omitFalsy = false) => {
+  const loggableSegments = omitFalsy ? segments.filter(s => s) : segments
+  const str = loggableSegments.map((s, n) => {
     // Add spaces between items, except after a linebreak.
     const space = (n !== segments.length - 1 && !String(segments[n]).endsWith('\n') ? ' ' : '')
 
@@ -106,10 +107,10 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
 }
 
 /** Logs a line of text with a given verbosity (as a number). */
-const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null, colorRegular = null) => (...segments) => {
+const logVerbose = (verbosity, logFn = console.log, colorize = true, colorAll = null, colorRegular = null, omitFalsy = false) => (...segments) => {
   // Ignore if the global verbosity value is lower than this.
   if (options.verbosity > verbosity) return
-  logSegments(segments, logFn, colorize, colorAll, colorRegular)
+  logSegments(segments, logFn, colorize, colorAll, colorRegular, omitFalsy)
 }
 
 /** Create log functions for each verbosity. */
