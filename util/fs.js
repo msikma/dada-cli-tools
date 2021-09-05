@@ -3,15 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.changeExtension = exports.splitFilename = exports.resolveTilde = exports.formatBytes = exports.formatFilesize = void 0;
+exports.progName = exports.readJSON = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.changeExtension = exports.resolveTilde = exports.formatBytes = exports.formatFilesize = void 0;
+
+var _path = _interopRequireDefault(require("path"));
+
+var _os = _interopRequireDefault(require("os"));
 
 var _filesize = _interopRequireDefault(require("filesize"));
 
 var _fs = require("fs");
-
-var _os = require("os");
-
-var _path = require("path");
 
 var _mkdirp = _interopRequireDefault(require("mkdirp"));
 
@@ -26,8 +26,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const MAX_FILENAME_RETRIES = 99;
 /** Returns the formatted size of a file. */
 
-const formatFilesize = async (path, opts = {}) => {
-  const stat = await _fs.promises.stat(path);
+const formatFilesize = async (filepath, opts = {}) => {
+  const stat = await _fs.promises.stat(filepath);
   return formatBytes(stat.size, opts);
 };
 /** Returns a formatted version of a given number of bytes. */
@@ -47,50 +47,37 @@ const formatBytes = (bytes, opts = {}) => {
 
 exports.formatBytes = formatBytes;
 
-const resolveTilde = pathStr => {
-  let path = pathStr.trim(); // The tilde is only valid if it's at the start of the string.
+const resolveTilde = (filepath, deslash = true, resolve = true, homedir = _os.default.homedir()) => {
+  let fpath = filepath.trim(); // The tilde is only valid if it's at the start of the string.
 
-  if (path.startsWith('~')) {
-    path = (0, _os.homedir)() + path.slice(1);
+  if (fpath.startsWith('~')) {
+    fpath = homedir + fpath.slice(1);
+  } // Optionally, fully resolve the path (which also deslashes it).
+
+
+  if (resolve) {
+    return _path.default.resolve(fpath);
+  } // Optionally, deslash the path (remove trailing / character).
+
+
+  if (deslash) {
+    if (fpath === '/') return fpath;
+    return fpath.slice(-1) === '/' ? fpath.slice(0, -1) : fpath;
   }
 
-  return path;
-};
-/** Splits up a filename into the basename (including the path) and file extension. */
-
-
-exports.resolveTilde = resolveTilde;
-
-const splitFilename = filename => {
-  const fn = String(filename);
-  const bits = fn.split('.');
-
-  if (bits.length === 1) {
-    return {
-      basename: fn,
-      extension: ''
-    };
-  }
-
-  const basename = bits.slice(0, -1).join('.');
-  const extension = bits.slice(-1)[0];
-  return {
-    basename,
-    extension
-  };
+  return fpath;
 };
 /**
  * Changes a file's extension.
  */
 
 
-exports.splitFilename = splitFilename;
+exports.resolveTilde = resolveTilde;
 
 const changeExtension = (filename, ext) => {
-  const {
-    basename
-  } = splitFilename(filename);
-  return `${basename}.${ext}`;
+  const parsed = _path.default.parse(filename);
+
+  return `${parsed.name}.${ext}`;
 };
 /**
  * Determines a filename that does not exist yet.
@@ -105,18 +92,19 @@ exports.changeExtension = changeExtension;
 
 const getSafeFilename = async (target, separator = '', allowSafeFilename = true, limit = MAX_FILENAME_RETRIES) => {
   const {
-    basename,
-    extension
-  } = splitFilename(target);
+    name,
+    ext
+  } = _path.default.parse(target);
+
   let targetName = {
-    basename,
+    name,
     suffix: 0
   },
       targetNameStr;
 
   while (true) {
     // Increment the name suffix and see if we can create this file.
-    targetNameStr = `${targetName.basename}${separator}${targetName.suffix > 0 ? targetName.suffix : ''}.${extension}`;
+    targetNameStr = `${targetName.name}${separator}${targetName.suffix > 0 ? targetName.suffix : ''}.${ext}`;
 
     if (await fileExists(targetNameStr)) {
       targetName.suffix += 1; // If we've tried too many times, fail and return information.
@@ -165,10 +153,10 @@ const writeFileSafely = async (target, content, options) => {
 
 exports.writeFileSafely = writeFileSafely;
 
-const canAccess = async path => {
+const canAccess = async filepath => {
   try {
     // If access is possible, this will return null. Failure will throw.
-    return (await _fs.promises.access(path, _fs.constants.F_OK | _fs.constants.W_OK)) == null;
+    return (await _fs.promises.access(filepath, _fs.constants.F_OK | _fs.constants.W_OK)) == null;
   } catch (err) {
     return false;
   }
@@ -178,9 +166,9 @@ const canAccess = async path => {
 
 exports.canAccess = canAccess;
 
-const fileExists = async path => {
+const fileExists = async filepath => {
   try {
-    return (await _fs.promises.access(path, _fs.constants.F_OK)) == null;
+    return (await _fs.promises.access(filepath, _fs.constants.F_OK)) == null;
   } catch (err) {
     return false;
   }
@@ -190,55 +178,36 @@ const fileExists = async path => {
 
 exports.fileExists = fileExists;
 
-const ensureDir = path => new Promise((resolve, reject) => (0, _mkdirp.default)(path, err => {
-  if (err) return reject(err);
-  return resolve(true);
-}));
-/** Ensures that a directory exists. Returns a promise resolving to a boolean. */
+const ensureDir = async filepath => {
+  return !!(await _fs.promises.mkdir(filepath, {
+    recursive: true
+  }));
+};
+/** Loads a JSON file, either sync or async. */
 
 
 exports.ensureDir = ensureDir;
 
-const ensureDirBool = async path => {
-  try {
-    await ensureDir(path);
-    return true;
-  } catch (_) {
-    return false;
+const readJSON = (filepath, async = true, encoding = 'utf8') => {
+  if (async) {
+    return readJSONAsync(filepath, encoding);
   }
-};
-/** Loads a JSON file synchronously. */
 
-
-exports.ensureDirBool = ensureDirBool;
-
-const readJSONSync = (path, encoding = 'utf8') => {
-  return JSON.parse((0, _fs.readFileSync)(path, encoding));
-};
-/** Loads a JSON file asynchronously. */
-
-
-exports.readJSONSync = readJSONSync;
-
-const readJSON = async (path, encoding = 'utf8') => {
-  const data = await _fs.promises.readFile(path, encoding);
-  const content = JSON.parse(data);
-  return content;
-};
-/** Returns the directory name for a full path. */
-
-
-exports.readJSON = readJSON;
-
-const dirName = path => {
-  const info = (0, _path.parse)(path);
-  return info.dir;
+  return JSON.parse((0, _fs.readFileSync)(filepath, encoding));
 };
 /** Returns the name of the currently running program. */
 
 
-exports.dirName = dirName;
+exports.readJSON = readJSON;
 
-const progName = () => (0, _path.basename)(_process.default.argv[1]);
+const progName = () => _path.default.basename(_process.default.argv[1]);
+/** Loads a JSON file async. */
+
 
 exports.progName = progName;
+
+const readJSONAsync = async (filepath, encoding = 'utf8') => {
+  const data = await _fs.promises.readFile(filepath, encoding);
+  const content = JSON.parse(data);
+  return content;
+};
