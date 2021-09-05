@@ -3,7 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.changeExtension = exports.splitFilename = exports.resolveTilde = void 0;
+exports.progName = exports.dirName = exports.readJSON = exports.readJSONSync = exports.ensureDirBool = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.changeExtension = exports.splitFilename = exports.resolveTilde = exports.formatBytes = exports.formatFilesize = void 0;
+
+var _filesize = _interopRequireDefault(require("filesize"));
 
 var _fs = require("fs");
 
@@ -22,7 +24,28 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /** Max number of times we'll try to figure out a different filename in writeFileSafely(). */
 const MAX_FILENAME_RETRIES = 99;
+/** Returns the formatted size of a file. */
+
+const formatFilesize = async (path, opts = {}) => {
+  const stat = await _fs.promises.stat(path);
+  return formatBytes(stat.size, opts);
+};
+/** Returns a formatted version of a given number of bytes. */
+
+
+exports.formatFilesize = formatFilesize;
+
+const formatBytes = (bytes, opts = {}) => {
+  return (0, _filesize.default)(bytes, {
+    base: 10,
+    round: 1,
+    ...opts
+  });
+};
 /** This modifies the tilde (~) to point to the user's home. */
+
+
+exports.formatBytes = formatBytes;
 
 const resolveTilde = pathStr => {
   let path = pathStr.trim(); // The tilde is only valid if it's at the start of the string.

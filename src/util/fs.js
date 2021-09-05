@@ -1,6 +1,7 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
+import filesize from 'filesize'
 import { promises as fs, constants, readFileSync } from 'fs'
 import { homedir } from 'os'
 import { parse, basename } from 'path'
@@ -9,6 +10,17 @@ import process from 'process'
 
 /** Max number of times we'll try to figure out a different filename in writeFileSafely(). */
 const MAX_FILENAME_RETRIES = 99
+
+/** Returns the formatted size of a file. */
+export const formatFilesize = async (path, opts = {}) => {
+  const stat = await fs.stat(path)
+  return formatBytes(stat.size, opts)
+}
+
+/** Returns a formatted version of a given number of bytes. */
+export const formatBytes = (bytes, opts = {}) => {
+  return filesize(bytes, { base: 10, round: 1, ...opts })
+}
 
 /** This modifies the tilde (~) to point to the user's home. */
 export const resolveTilde = (pathStr) => {

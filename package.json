@@ -36,6 +36,7 @@
     "chalk": "^2.0.0",
     "cheerio": "^1.0.0-rc.2",
     "file-cookie-store-sync": "^0.1.0",
+    "filesize": "^8.0.0",
     "got": "^9.6.0",
     "lodash": "^4.17.15",
     "markdown-escape": "^1.0.2",
