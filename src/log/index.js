@@ -5,6 +5,7 @@ import chalk from 'chalk'
 import util from 'util'
 import { isNumber, isString } from 'lodash'
 
+import { noop } from '../util/misc'
 import { progName } from '../util/fs'
 
 // Export table logging routines.
@@ -125,6 +126,13 @@ export const log = logInfo
 /** Exits the program with a given exit code. */
 export const exit = (exitCode = 0) => {
   process.exit(exitCode)
+}
+
+/** Returns a logging function; either a no-op, or a custom function, or logVerbose() as a sensible default. */
+export const getLogFn = (doLogging, logFn) => {
+  if (!doLogging) return noop
+  if (logFn) return logFn
+  return logVerbose
 }
 
 /** Exits the program with an error. */

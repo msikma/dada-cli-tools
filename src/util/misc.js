@@ -25,9 +25,10 @@ export const isEmpty = (obj) => (
   Object.keys(obj).length === 0
 )
 
-/**
- * Turns an array into an object of keys all set to true.
- */
+/** No-op. */
+export const noop = () => {}
+
+/** Turns an array into an object of keys all set to true. */
 export const toKeys = arr => arr.reduce((all, item) => ({ ...all, [item]: true }), {})
 
 /** Sorts an object by keys. */

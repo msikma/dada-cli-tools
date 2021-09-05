@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.sortByKeys = exports.toKeys = exports.isEmpty = exports.zipObj = exports.zeroPadMax = exports.wait = void 0;
+exports.sortByKeys = exports.toKeys = exports.noop = exports.isEmpty = exports.zipObj = exports.zeroPadMax = exports.wait = void 0;
 
 var _lodash = require("lodash");
 
@@ -32,12 +32,16 @@ const zipObj = (a, b) => a.reduce((obj, _, n) => ({ ...obj,
 exports.zipObj = zipObj;
 
 const isEmpty = obj => Object.keys(obj).length === 0;
-/**
- * Turns an array into an object of keys all set to true.
- */
+/** No-op. */
 
 
 exports.isEmpty = isEmpty;
+
+const noop = () => {};
+/** Turns an array into an object of keys all set to true. */
+
+
+exports.noop = noop;
 
 const toKeys = arr => arr.reduce((all, item) => ({ ...all,
   [item]: true

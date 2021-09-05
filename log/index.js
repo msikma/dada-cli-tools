@@ -9,13 +9,15 @@ Object.defineProperty(exports, "logTable", {
     return _table.logTable;
   }
 });
-exports.die = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.inspect = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = exports.logDepth = void 0;
+exports.die = exports.getLogFn = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.inspect = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = exports.logDepth = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
 var _util = _interopRequireDefault(require("util"));
 
 var _lodash = require("lodash");
+
+var _misc = require("../util/misc");
 
 var _fs = require("../util/fs");
 
@@ -108,8 +110,8 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
         s = _chalk.default.green(s);
       } // Colorize regular strings if they don't conform to any specific type.
       else if (colorRegular) {
-          s = colorRegular(s);
-        }
+        s = colorRegular(s);
+      }
 
       return s + space;
     } // Non-string objects are inspected.
@@ -158,10 +160,20 @@ exports.log = log;
 const exit = (exitCode = 0) => {
   process.exit(exitCode);
 };
-/** Exits the program with an error. */
+/** Returns a logging function; either a no-op, or a custom function, or logVerbose() as a sensible default. */
 
 
 exports.exit = exit;
+
+const getLogFn = (doLogging, logFn) => {
+  if (!doLogging) return _misc.noop;
+  if (logFn) return logFn;
+  return logVerbose;
+};
+/** Exits the program with an error. */
+
+
+exports.getLogFn = getLogFn;
 
 const die = (...segments) => {
   if (segments.length) {
