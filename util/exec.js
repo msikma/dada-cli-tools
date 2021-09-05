@@ -3,35 +3,36 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.execCmd = exports.splitArgs = void 0;
+exports.execCmd = void 0;
 
 var _child_process = require("child_process");
+
+var _cmdTokenize = require("cmd-tokenize");
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-/**
- * Splits a string as if it's a terminal command, with items separated either by space
- * or by enclosed quotation marks. The quotation marks will be removed if they are present.
- * The result is returned as array.
- *
- * E.g. arg1 arg2 "arg3 and 4" 'arg5 and 6' "arg7 and \"arg8\""
- * is split into ['arg1', 'arg2', 'arg3 and 4', 'arg5 and 6', 'arg7 and "arg8"']
- *
- * Be careful when escaping quotation marks (remember to double escape in string literals).
- */
-const splitArgs = cmd => {
-  const splitter = /([^\s"]*)"[^"\\]*(\\.[^"\\]*)*"|([^\s']*)'[^'\\]*(\\.[^'\\]*)*'|[^\s]+/g;
-  const args = [];
-  let item, match, inner;
+/** Default options for execCmd(). */
+const defaultOpts = {
+  // If 'true', output is logged directly to the log function (process.stdout and process.stderr by default).
+  logged: false,
+  // Encoding of the command output. If not set, a buffer is returned; otherwise the buffer is decoded into a string.
+  encoding: null,
+  // Log functions for stdout and stderr.
+  logOutFn: (str, encoding = null) => process.stdout.write(str, encoding),
+  logErrFn: (str, encoding = null) => process.stderr.write(str, encoding)
+};
+/** Default options passed to child_process.spawn(). */
 
-  while ((item = splitter.exec(cmd)) !== null) {
-    match = item[0].match(/^"(.*)"$|^'(.*)'$|^(.*)$/);
-    inner = (match[1] || match[2] || match[3]).replace(/\\"/g, `"`).replace(/\\'/g, `'`);
-    args.push(inner);
+const defaultSpawnOpts = {};
+/** Encodes a buffer into a string, if an encoding is specified. */
+
+const encode = (buffer, encoding) => {
+  if (encoding) {
+    return buffer.toString(encoding);
   }
 
-  return args;
+  return buffer;
 };
 /**
  * Runs an external command and returns an object with the result and exit code.
@@ -41,11 +42,21 @@ const splitArgs = cmd => {
  */
 
 
-exports.splitArgs = splitArgs;
-
-const execCmd = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
-  const args = splitArgs(cmdStr);
-  const cmd = (0, _child_process.spawn)(args[0], args.slice(1), { ...opts
+const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((resolve, reject) => {
+  const opts = { ...defaultOpts,
+    ...userOpts
+  };
+  const spawnOpts = { ...defaultSpawnOpts,
+    ...userSpawnOpts
+  };
+  const {
+    logOutFn,
+    logErrFn,
+    logged,
+    encoding
+  } = opts;
+  const args = (0, _cmdTokenize.splitCommand)(cmd);
+  const proc = (0, _child_process.spawn)(args[0], args.slice(1), { ...spawnOpts
   });
   const output = {
     stdout: [],
@@ -55,27 +66,29 @@ const execCmd = (cmdStr, opts = {}) => new Promise((resolve, reject) => {
     error: null
   };
 
-  const getOutput = () => {
+  const finalize = () => {
     return { ...output,
-      stdout: output.stdout.join(''),
-      stderr: output.stderr.join('')
+      stdout: encode(Buffer.concat(output.stdout), encoding),
+      stderr: encode(Buffer.concat(output.stderr), encoding)
     };
   };
 
-  cmd.stdout.on('data', data => {
-    output.stdout.push(String(data));
+  proc.stdout.on('data', data => {
+    logOutFn && logged && logOutFn(data);
+    output.stdout.push(data);
   });
-  cmd.stderr.on('data', data => {
+  proc.stderr.on('data', data => {
+    logErrFn && logged && logErrFn(data);
     output.stderr.push(data);
   });
-  cmd.on('close', (code, signal) => {
+  proc.on('close', (code, signal) => {
     output.code = code;
     output.signal = signal;
-    return resolve(getOutput());
+    return resolve(finalize());
   });
-  cmd.on('error', err => {
+  proc.on('error', err => {
     output.error = err;
-    return reject(getOutput());
+    return reject(finalize());
   });
 });
 
