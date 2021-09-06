@@ -82,21 +82,21 @@ const simplifyNode = obj => {
       return newStr;
     } // For all other regular nested nodes.
     else {
-        const newObj = {};
+      const newObj = {};
 
-        for (const [k, v] of Object.entries(obj)) {
-          if (k === '$') continue;
-          newObj[k] = simplifyNode(v);
-        }
-
-        if (obj.$) {
-          for (const [k, v] of Object.entries(obj.$)) {
-            newObj[`$${k}`] = v;
-          }
-        }
-
-        return newObj;
+      for (const [k, v] of Object.entries(obj)) {
+        if (k === '$') continue;
+        newObj[k] = simplifyNode(v);
       }
+
+      if (obj.$) {
+        for (const [k, v] of Object.entries(obj.$)) {
+          newObj[`$${k}`] = v;
+        }
+      }
+
+      return newObj;
+    }
   } // All other types (string, numbers) are returned verbatim.
 
 

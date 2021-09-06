@@ -223,8 +223,8 @@ const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
       return configDefaults;
     } // Else, pass on the error we just got.
     else {
-        throw err;
-      }
+      throw err;
+    }
   }
 };
 

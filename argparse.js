@@ -19,9 +19,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 // and the ability to add multiple sections. This is useful for grouping certain options together.
 // Original library: <https://github.com/nodeca/argparse>
 const makeArgParser = opts => {
-  var _temp;
-
-  return new (_temp = class ArgumentParserWrapper {
+  return new class ArgumentParserWrapper {
     constructor() {
       _defineProperty(this, "addArgument", (...opts) => {
         // Add a section if we've set one up to be printed.
@@ -158,7 +156,7 @@ const makeArgParser = opts => {
     } // Adds extra help lines to the output if needed, and sets up a modified help formatter.
 
 
-  }, _temp)();
+  }();
 };
 
 exports.makeArgParser = makeArgParser;
