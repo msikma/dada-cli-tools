@@ -3,31 +3,22 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-Object.defineProperty(exports, "logTable", {
-  enumerable: true,
-  get: function () {
-    return _table.logTable;
-  }
-});
 exports.die = exports.getLogFn = exports.exit = exports.log = exports.logDebug = exports.logInfo = exports.logNotice = exports.logWarn = exports.logError = exports.logFatal = exports.inspect = exports.setVerbosity = exports.logDefaultLevel = exports.logLevels = exports.logDepth = void 0;
 
 var _chalk = _interopRequireDefault(require("chalk"));
 
 var _util = _interopRequireDefault(require("util"));
 
-var _lodash = require("lodash");
-
 var _misc = require("../util/misc");
 
-var _fs = require("../util/fs");
+var _data = require("../util/data");
 
-var _table = require("./table");
+var _fs = require("../util/fs");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
-// Export table logging routines.
 // Default logging depth.
 const logDepth = 6; // Supported log levels and default. Can be used in e.g. CLI --help output.
 
@@ -56,7 +47,7 @@ const ABS_REL_PATH = new RegExp('^\s?\.?/');
 /** Sets the desired logging verbosity. The value must be either a number or a string. */
 
 const setVerbosity = verbosity => {
-  if ((0, _lodash.isNumber)(verbosity)) {
+  if ((0, _data.isNumber)(verbosity)) {
     options.verbosity = verbosity;
     return;
   }
@@ -77,7 +68,8 @@ exports.setVerbosity = setVerbosity;
 const inspect = obj => {
   return _util.default.inspect(obj, {
     colors: true,
-    depth: logDepth
+    depth: logDepth,
+    maxArrayLength: 1024
   });
 };
 /**
@@ -104,7 +96,7 @@ const logSegments = (segments, logFn = console.log, colorize = true, colorAll = 
     // Add spaces between items, except after a linebreak.
     const space = n !== segments.length - 1 && !String(segments[n]).endsWith('\n') ? ' ' : ''; // Regular strings are colorized and logged directly.
 
-    if ((0, _lodash.isString)(s)) {
+    if ((0, _data.isString)(s)) {
       // If this string conforms to a specific type (URL or path), colorize it green.
       if (colorize && (HTTP_PROTOCOL.test(s) || ABS_REL_PATH.test(s))) {
         s = _chalk.default.green(s);
@@ -177,7 +169,7 @@ exports.getLogFn = getLogFn;
 
 const die = (...segments) => {
   if (segments.length) {
-    logSegments([`${(0, _fs.progName)()}:`, ...segments], console.error, false, _chalk.default.red);
+    logSegments([`${(0, _fs.getProgname)()}:`, ...segments], console.error, false, _chalk.default.red);
   }
 
   exit(1);

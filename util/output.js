@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.dataTypes = exports.outputCallback = exports.outputTerminal = exports.outputJSON = exports.getDataDescriptions = exports.safeOutputType = exports.dataDefaultType = exports.dataDescriptions = void 0;
+exports.default = exports.dataTypes = exports.outputCallback = exports.outputTerminal = exports.outputJS = exports.outputJSON = exports.getDataDescriptions = exports.safeOutputType = exports.dataDefaultType = exports.dataDescriptions = void 0;
 
 var _util = _interopRequireDefault(require("util"));
 
@@ -59,10 +59,28 @@ exports.getDataDescriptions = getDataDescriptions;
 const outputJSON = obj => {
   return JSON.stringify(obj);
 };
-/** Outputs data formatted for the terminal with color. */
+/** Outputs data as JSON-like JS object with module.exports prefix. */
 
 
 exports.outputJSON = outputJSON;
+
+const outputJS = obj => {
+  const data = _util.default.inspect(obj, {
+    colors: false,
+    depth: null,
+    showHidden: false,
+    maxArrayLength: null,
+    maxStringLength: null,
+    breakLength: 140,
+    compact: 4
+  });
+
+  return `module.exports = ${data}\n`;
+};
+/** Outputs data formatted for the terminal with color. */
+
+
+exports.outputJS = outputJS;
 
 const outputTerminal = obj => {
   // Use the util.inspect() method to log the entire object with color.

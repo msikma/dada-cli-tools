@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getImagesFromHTML = exports.findTagContent = exports.blockElsToLb = exports.isHTML = exports.htmlToMarkdown = exports.getLargestImageSrcset = exports.getWikiArticleAbstract = exports.makeLinksAbsolute = void 0;
+exports.getImagesFromHTML = exports.findTagWithContent = exports.blockElementsToLinebreaks = exports.isHTML = exports.htmlToMarkdown = exports.getLargestImageSrcset = exports.getWikiArticleAbstract = exports.makeLinksAbsolute = void 0;
 
 var _lodash = require("lodash");
 
@@ -11,17 +11,21 @@ var _turndown = _interopRequireDefault(require("turndown"));
 
 var _cheerio = _interopRequireDefault(require("cheerio"));
 
+var _data = require("./data");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
-
+const htmlElements = ['a', 'abbr', 'acronym', 'address', 'applet', 'area', 'article', 'aside', 'audio', 'b', 'base', 'basefont', 'bdi', 'bdo', 'bgsound', 'big', 'blink', 'blockquote', 'body', 'br', 'button', 'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup', 'content', 'data', 'datalist', 'dd', 'decorator', 'del', 'details', 'dfn', 'dir', 'div', 'dl', 'dt', 'element', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'link', 'listing', 'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'nobr', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'plaintext', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'shadow', 'small', 'source', 'spacer', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr', 'xmp'];
+const blockElements = ['address', 'article', 'aside', 'blockquote', 'details', 'dialog', 'dd', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'ul'];
 /**
  * Runs through the anchors in a Cheerio object and ensures they are absolute.
  */
+
 const makeLinksAbsolute = ($, item, objBaseURL) => {
   // Allow objBaseURL to be either a function or a plain string.
-  const fnBaseURL = (0, _lodash.isFunction)(objBaseURL) ? objBaseURL : n => `${objBaseURL}${n}`;
+  const fnBaseURL = (0, _data.isFunction)(objBaseURL) ? objBaseURL : n => `${objBaseURL}${n}`;
   $('a', item).get().map(a => {
     const $a = $(a);
     const href = $a.attr('href');
@@ -132,18 +136,21 @@ const htmlToMarkdown = (html, {
 exports.htmlToMarkdown = htmlToMarkdown;
 
 const isHTML = string => {
-  const items = [string.indexOf('<p>') > 0, string.indexOf('<strong>') > 0, string.indexOf('<img') > 0, string.indexOf('<span') > 0, string.indexOf('<div') > 0, string.indexOf('<br /') > 0, string.indexOf('<br/') > 0, string.indexOf('<br>') > 0, string.indexOf('href="') > 0];
-  return items.indexOf(true) > -1;
+  for (const el of htmlElements) {
+    if (string.includes(`<${el}>`)) {
+      return true;
+    }
+  }
+
+  return false;
 };
-/** List of block elements. (Non-exhaustive, but it works well enough for most cases.) */
+/** Converts block elements to linebreaks. Useful for cleaning up HTML before converting to plain text. */
 
 
 exports.isHTML = isHTML;
-const blockEls = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul', 'pre', 'address', 'blockquote', 'dl', 'div', 'fieldset', 'form', 'noscript', 'table'];
-/** Converts block elements to linebreaks. Useful for cleaning up HTML before converting to plain text. */
 
-const blockElsToLb = $text => {
-  for (let el of blockEls) {
+const blockElementsToLinebreaks = $text => {
+  for (const el of blockElements) {
     $text.find(el).before('\n');
   }
 
@@ -155,23 +162,25 @@ const blockElsToLb = $text => {
  */
 
 
-exports.blockElsToLb = blockElsToLb;
+exports.blockElementsToLinebreaks = blockElementsToLinebreaks;
 
-const findTagContent = ($, tag, contentHint) => {
-  return $(tag).filter((_, el) => ~$(el).html().indexOf(contentHint)).map((_, el) => $(el).html()).get()[0];
+const findTagWithContent = ($, tag, contentHint) => {
+  return $(tag).filter((_, el) => $(el).html().includes(contentHint)).map((_, el) => $(el).html()).get()[0];
 };
 /**
  * Returns image URLs from an HTML string.
  */
 
 
-exports.findTagContent = findTagContent;
+exports.findTagWithContent = findTagWithContent;
 
 const getImagesFromHTML = html => {
   const $ = _cheerio.default.load(`<div id="dada-cli-tools-cheerio-wrapper">${html}</div>`);
 
   const $html = $('#dada-cli-tools-cheerio-wrapper');
-  return (0, _lodash.uniq)($html.find('img').get().map(i => $(i).attr('src')));
+  const srcList = $html.find('img').get().map(i => $(i).attr('src'));
+  const dataSrcList = $html.find('img').get().map(i => $(i).attr('data-src'));
+  return (0, _lodash.uniq)([...srcList, ...dataSrcList].filter(i => i));
 };
 
 exports.getImagesFromHTML = getImagesFromHTML;

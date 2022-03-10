@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.execCmd = void 0;
+exports.execCmd = exports.execLog = exports.execGetJSON = void 0;
 
 var _child_process = require("child_process");
 
@@ -35,6 +35,39 @@ const encode = (buffer, encoding) => {
   return buffer;
 };
 /**
+ * Runs execCmd() and parses the result as JSON.
+ * 
+ * Defaults to UTF-8 as the encoding.
+ */
+
+
+const execGetJSON = async (cmd, userOpts, userSpawnOpts) => {
+  const result = await execCmd(cmd, {
+    encoding: 'utf8',
+    ...userOpts
+  }, userSpawnOpts);
+  const data = JSON.parse(result.stdout);
+  return data;
+};
+/**
+ * Runs execCmd() with 'logged' set to true.
+ */
+
+
+exports.execGetJSON = execGetJSON;
+
+const execLog = async (cmd, userOpts, userSpawnOpts) => {
+  return await execCmd(cmd, { ...userOpts,
+    logged: true
+  }, userSpawnOpts);
+};
+
+exports.execLog = execLog;
+
+const whichCmd = async cmd => {
+  const res = await execCmd(`command -v ${_cmdTokenize.util.escapeArgument(cmd)}`);
+};
+/**
  * Runs an external command and returns an object with the result and exit code.
  *
  * This allows for an external command to be run as a string,
@@ -61,6 +94,7 @@ const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((resolve
   const output = {
     stdout: [],
     stderr: [],
+    stdall: [],
     code: null,
     signal: null,
     error: null
@@ -68,6 +102,7 @@ const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((resolve
 
   const finalize = () => {
     return { ...output,
+      stdall: encode(Buffer.concat(output.stdall), encoding),
       stdout: encode(Buffer.concat(output.stdout), encoding),
       stderr: encode(Buffer.concat(output.stderr), encoding)
     };
@@ -76,10 +111,12 @@ const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((resolve
   proc.stdout.on('data', data => {
     logOutFn && logged && logOutFn(data);
     output.stdout.push(data);
+    output.stdall.push(data);
   });
   proc.stderr.on('data', data => {
     logErrFn && logged && logErrFn(data);
     output.stderr.push(data);
+    output.stdall.push(data);
   });
   proc.on('close', (code, signal) => {
     output.code = code;

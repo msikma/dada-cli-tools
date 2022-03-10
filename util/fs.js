@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.progName = exports.readJSON = exports.ensureDir = exports.fileExists = exports.canAccess = exports.writeFileSafely = exports.getSafeFilename = exports.changeExtension = exports.resolveTilde = exports.formatBytes = exports.formatFilesize = void 0;
+exports.getProgname = exports.readJSON = exports.ensureDir = exports.fileExists = exports.fileIsWritable = exports.readDataFallback = exports.requireDataFallback = exports.writeFileSafely = exports.getUnusedFilename = exports.changeExtension = exports.resolveTilde = exports.formatBytes = exports.getFilesize = void 0;
 
 var _path = _interopRequireDefault(require("path"));
 
@@ -11,9 +11,9 @@ var _os = _interopRequireDefault(require("os"));
 
 var _filesize = _interopRequireDefault(require("filesize"));
 
-var _fs = require("fs");
+var _fastGlob = _interopRequireDefault(require("fast-glob"));
 
-var _mkdirp = _interopRequireDefault(require("mkdirp"));
+var _fs = require("fs");
 
 var _process = _interopRequireDefault(require("process"));
 
@@ -23,17 +23,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // © MIT license
 
 /** Max number of times we'll try to figure out a different filename in writeFileSafely(). */
-const MAX_FILENAME_RETRIES = 99;
+const MAX_FILENAME_RETRIES = 999;
 /** Returns the formatted size of a file. */
 
-const formatFilesize = async (filepath, opts = {}) => {
+const getFilesize = async (filepath, opts = {}) => {
   const stat = await _fs.promises.stat(filepath);
-  return formatBytes(stat.size, opts);
+  return {
+    formatted: formatBytes(stat.size, opts),
+    bytes: stat.size
+  };
 };
 /** Returns a formatted version of a given number of bytes. */
 
 
-exports.formatFilesize = formatFilesize;
+exports.getFilesize = getFilesize;
 
 const formatBytes = (bytes, opts = {}) => {
   return (0, _filesize.default)(bytes, {
@@ -77,83 +80,132 @@ exports.resolveTilde = resolveTilde;
 const changeExtension = (filename, ext) => {
   const parsed = _path.default.parse(filename);
 
-  return `${parsed.name}.${ext}`;
+  const extension = ext.startsWith('.') ? ext.slice(1) : ext;
+  return `${parsed.name}.${extension}`;
 };
 /**
- * Determines a filename that does not exist yet.
+ * Checks a given filename to see if it exists, and if it does, return a different suggestion.
+ * 
+ * This also returns a boolean for whether or not the original filename existed.
  *
- * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.
- * TODO: this should be simplified, by getting a full list of files and then
- * determining the new name once, rather than checking each possibility.
+ * E.g. if 'file.jpg' exists, this might return 'file 1.jpg' or 'file 22.jpg'.
  */
 
 
 exports.changeExtension = changeExtension;
 
-const getSafeFilename = async (target, separator = '', allowSafeFilename = true, limit = MAX_FILENAME_RETRIES) => {
-  const {
-    name,
-    ext
-  } = _path.default.parse(target);
+const getUnusedFilename = async (filepath, {
+  separator = ' ',
+  limit = 999
+} = {}) => {
+  const full = _path.default.resolve(filepath);
 
-  let targetName = {
-    name,
-    suffix: 0
-  },
-      targetNameStr;
+  const parsed = _path.default.parse(full);
+
+  const prefix = filepath.replace(parsed.base, '');
+
+  if (!(await fileExists(full))) {
+    return [filepath, false];
+  }
+
+  const files = toKeys(await (0, _fastGlob.default)(`${parsed.name}${separator}*${parsed.ext}`, {
+    cwd: parsed.dir
+  }));
+  let suffix = 0;
 
   while (true) {
-    // Increment the name suffix and see if we can create this file.
-    targetNameStr = `${targetName.name}${separator}${targetName.suffix > 0 ? targetName.suffix : ''}.${ext}`;
+    const name = `${parsed.name}${separator}${++suffix}${parsed.ext}`;
 
-    if (await fileExists(targetNameStr)) {
-      targetName.suffix += 1; // If we've tried too many times, fail and return information.
+    if (!files[name]) {
+      return [`${prefix}${name}`, true];
+    }
 
-      if (allowSafeFilename || targetName.suffix >= limit) {
-        return {
-          success: false,
-          attempts: targetName.suffix,
-          separator: separator,
-          passedFilename: target,
-          targetFilename: targetNameStr,
-          hasModifiedFilename: target !== targetNameStr
-        };
-      }
-    } else {
-      return {
-        success: true,
-        attempts: targetName.suffix,
-        separator: separator,
-        passedFilename: target,
-        targetFilename: targetNameStr,
-        hasModifiedFilename: target !== targetNameStr
-      };
+    if (suffix > limit) {
+      break;
     }
   }
+
+  return [null, true];
 };
-/** Writes a file "safely" - if the target filename exists, a different name will be chosen. */
+/**
+ * Writes a file "safely" - if the target filename exists, a different name will be chosen.
+ * 
+ * Uses the same arguments as fs.writeFile(). If 'errorOnExisting' is true, this function
+ * throws if the file already existed instead of writing to a new file.
+ */
 
 
-exports.getSafeFilename = getSafeFilename;
+exports.getUnusedFilename = getUnusedFilename;
 
-const writeFileSafely = async (target, content, options) => {
-  const safeFn = await getSafeFilename(target);
+const writeFileSafely = async (target, content, options, {
+  errorOnExisting = false
+} = {}) => {
+  const [name, existed] = await getUnusedFilename(target);
 
-  if (!safeFn.success) {
-    return safeFn;
+  if (existed && errorOnExisting) {
+    throw new Error('writeFileSafely: file existed and errorOnExisting is true');
   }
 
-  const result = await _fs.promises.writeFile(safeFn.targetFilename, content, options);
-  return { ...safeFn,
-    success: result
-  };
+  if (name == null) {
+    throw new Error('writeFileSafely: could not find an unused filename');
+  }
+
+  await _fs.promises.writeFile(name, content, options);
+  return [name, existed];
 };
-/** Checks whether we can access (read, modify) a path. */
+/**
+ * Returns the require() result of a Javascript file, or a fallback object if it doesn't exist.
+ * 
+ * Also returns a boolean indicating whether the file existed or not.
+ * 
+ * Errors other than the file not existing are bubbled.
+ */
 
 
 exports.writeFileSafely = writeFileSafely;
 
-const canAccess = async filepath => {
+const requireDataFallback = (filepath, defaultData) => {
+  try {
+    const data = require(filepath);
+
+    return [data, true];
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      return [defaultData, false];
+    } else {
+      throw err;
+    }
+  }
+};
+/**
+ * Returns either the JSON data of a file, or a fallback object if it doesn't exist.
+ * 
+ * Also returns a boolean indicating whether the file existed or not.
+ * 
+ * Errors other than the file not existing are bubbled.
+ */
+
+
+exports.requireDataFallback = requireDataFallback;
+
+const readDataFallback = async (filepath, defaultData, encoding) => {
+  try {
+    const data = await _fs.promises.readFile(filepath, encoding);
+    return [JSON.parse(data), true];
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return [defaultData, false];
+    } else {
+      throw err;
+    }
+  }
+};
+/** Checks whether we can access (read and modify) a path. */
+
+
+exports.readDataFallback = readDataFallback;
+
+const fileIsWritable = async filepath => {
   try {
     // If access is possible, this will return null. Failure will throw.
     return (await _fs.promises.access(filepath, _fs.constants.F_OK | _fs.constants.W_OK)) == null;
@@ -164,7 +216,7 @@ const canAccess = async filepath => {
 /** Checks whether we can access (read) a file. As canAccess(). */
 
 
-exports.canAccess = canAccess;
+exports.fileIsWritable = fileIsWritable;
 
 const fileExists = async filepath => {
   try {
@@ -179,9 +231,14 @@ const fileExists = async filepath => {
 exports.fileExists = fileExists;
 
 const ensureDir = async filepath => {
-  return !!(await _fs.promises.mkdir(filepath, {
-    recursive: true
-  }));
+  try {
+    await _fs.promises.mkdir(filepath, {
+      recursive: true
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 };
 /** Loads a JSON file, either sync or async. */
 
@@ -200,11 +257,11 @@ const readJSON = (filepath, async = true, encoding = 'utf8') => {
 
 exports.readJSON = readJSON;
 
-const progName = () => _path.default.basename(_process.default.argv[1]);
+const getProgname = () => _path.default.basename(_process.default.argv[1]);
 /** Loads a JSON file async. */
 
 
-exports.progName = progName;
+exports.getProgname = getProgname;
 
 const readJSONAsync = async (filepath, encoding = 'utf8') => {
   const data = await _fs.promises.readFile(filepath, encoding);

@@ -114,7 +114,11 @@ const downloadFile = async (url, target, opts = {}, customOpts = {}) => {
     logFn,
     cleanupOnError = true
   } = opts;
-  const safeFn = await (0, _fs2.getSafeFilename)(target, '', opts.allowRenaming);
+  const safeFnRes = await (0, _fs2.getUnusedFilename)(target, '', opts.allowRenaming);
+  const safeFn = {
+    targetFilename: safeFnRes[0],
+    success: safeFnRes[0] != null
+  };
   const {
     targetFilename
   } = safeFn;
