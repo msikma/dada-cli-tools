@@ -1,176 +1,236 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-import fs from 'fs'
-import { dirname } from 'path'
-import { partialRight, cloneDeep } from 'lodash'
+import fs from 'fs/promises'
+import path from 'path'
+import lockfile from 'proper-lockfile'
+import { getLogFn } from './log'
+import { fileExists, ensureDir, resolveTilde, readDataFallback, requireDataFallback } from './util/fs'
+import { makeParseableDate } from './util/text'
+import { outputJS } from './util/output'
 
-import { logDebug } from './log'
-import { ensureDir, resolveTilde } from './util/fs'
 
 // Setting a base directory makes it easy to run the cache functions.
 // A good path is in ~/.cache/<directory> - the user level cache store.
 const settings = {
   cacheDir: resolveTilde('~/.cache/'),
   configDir: resolveTilde('~/.config/'),
-  // 10 minutes in seconds. 0 means 'never expire'.
-  validSeconds: 600
-}
-
-/** Sets the base directory used for cache filenames. */
-export const setBaseDir = baseDir => settings.cacheDir = baseDir
-
-/** Sets the duration that a cache file is valid in seconds. */
-export const setValidSeconds = secs => settings.validSeconds = secs
-
-/** Sets the cache to never expire. */
-export const setNeverExpire = () => settings.validSeconds = 0
-
-/** Attaches the base directory to a path, unless it's an absolute path. */
-const withBaseDir = path => {
-  if (path[0] === '/') return path
-  if (settings.cacheDir) {
-    return settings.cacheDir + path
+  lockfile: {
+    stale: 10000,
+    update: 2000
   }
-  return path
 }
 
-/** Checks to see if a file has gone stale. */
-const isFileStale = async (cachePath, validSeconds = settings.validSeconds) => {
-  // If validSeconds is 0, cache files never go stale.
-  if (settings.validSeconds === 0) return false
-
-  const curr = (+new Date())
-  const statData = await fs.promises.stat(cachePath)
-  // Convert seconds to ms to compare it with stat.
-  return (curr - (validSeconds * 1000)) > statData.mtimeMs
+/**
+ * Returns a set of decorated functions for a specific program name.
+ */
+export const makeProgTools = (progname) => {
+  const wrapFn = fn => (...args) => fn(progname, ...args)
+  return {
+    openCache: wrapFn(openCache),
+    readConfig: wrapFn(readConfig),
+    readTimestamp: wrapFn(readTimestamp),
+    writeTimestamp: wrapFn(writeTimestamp),
+    getCachePath: wrapFn(getCachePath),
+    getConfigPath: wrapFn(getConfigPath)
+  }
 }
 
-/** Simple check to see if a file exists. Returns a boolean. */
-const cacheFileExists = async (cachePath) => {
+/** Returns the path to a file in the config directory. */
+export const getCachePath = (progname, filepath = null) => {
+  return `${settings.cacheDir}/${progname}${filepath ? `/${filepath}` : ''}`
+}
+
+/** Returns the path to a file in the config directory. */
+export const getConfigPath = (progname, filepath = null) => {
+  return `${settings.configDir}/${progname}${filepath ? `/${filepath}` : ''}`
+}
+
+/** Writes a timestamp file indicating when a program last ran. */
+export const writeTimestamp = async (progname, name = 'lastrun', ext = 'txt', pathOverride = null) => {
+  return writeTimestampFile(pathOverride ? pathOverride : getCachePath(progname, `${name}${ext ? `.${ext}` : ''}`))
+}
+
+/** Reads a timestamp file indicating when a program last ran. */
+export const readTimestamp = async (progname, name = 'lastrun', ext = 'txt', pathOverride = null) => {
+  return readTimestampFile(pathOverride ? pathOverride : getCachePath(progname, `${name}${ext ? `.${ext}` : ''}`))
+}
+
+/** Writes a timestamp file. */
+export const writeTimestampFile = async (filepath) => {
+  await fs.writeFile(`${filepath}`, makeParseableDate(), 'utf8')
+}
+
+/** Reads a timestamp file; returns null if none exists. */
+export const readTimestampFile = async (filepath) => {
+  let value
   try {
-    await fs.promises.access(cachePath)
-    return true
-  }
-  catch (e) {
-    return false
-  }
-}
-
-/**
- * Returns the data stored in a cache file and its metadata.
- *
- * A given cache path will get the base directory appended to it if one
- * has been set. Then it's checked to exist and whether it's recent enough
- * to be relevant, and finally it's returned along with some metadata about the request.
- *
- * Whether a file is stale is determined entirely by the file's mtime.
- * If a file was saved longer ago than the 'validSeconds' time, it's considered stale.
- *
- * In most cases, the data will be JSON that needs to be parsed. By default this does so.
- */
-export const readCache = async (cachePath, defaults = {}, validSeconds = settings.validSeconds, parseJSON = true, isSimple = false, doLogging = false) => {
-  const path = withBaseDir(cachePath)
-  // If isSimple is true, it means we're not going to use the metadata. Only the file contents.
-  doLogging && logDebug('Reading cache from file', isSimple ? '(no metadata)' : null, '- valid seconds', validSeconds, '- path', path)
-  const exists = await cacheFileExists(path)
-  if (!exists) {
-    doLogging && logDebug('Cache file does not exist')
-    return { exists, isStale: null, path, validSeconds, data: defaults }
-  }
-  const isStale = await isFileStale(path, validSeconds)
-  if (isStale) {
-    doLogging && logDebug('Cache file is stale')
-    return { exists, isStale, path, validSeconds, data: defaults }
-  }
-
-  const dataRaw = await fs.promises.readFile(path)
-  const data = parseJSON ? JSON.parse(dataRaw) : dataRaw
-  doLogging && logDebug('Cache read and parsed')
-  return { exists, isStale, path, validSeconds, data }
-}
-
-/**
- * Basic cache reading function.
- *
- * Unlike readCache(), this only returns the actual file data without the metadata.
- * If there is no cache for some reason, this returns the defaults.
- */
-export const readCacheData = async (cachePath, defaults = {}, validSeconds = settings.validSeconds, parseJSON = true, doLogging = false) => {
-  const cache = await readCache(cachePath, defaults, validSeconds, parseJSON, true, doLogging)
-  return cache.data
-}
-
-/**
- * Writes data to a cache file.
- *
- * By default this will create a new directory if it doesn't exist.
- * Returns a boolean as result.
- */
-export const writeCache = async (cachePath, dataRaw, toJSON = true, makeDir = true, cleanJSON = true, encoding = 'utf8', doLogging = false) => {
-  const path = withBaseDir(cachePath)
-  doLogging && logDebug('Writing cache to file', path)
-
-  // Ensure the cache dir exists. TODO: need an error handler here
-  if (makeDir) {
-    const dir = dirname(path)
-    try {
-      await fs.promises.access(dir)
-    }
-    catch (err) {
-      doLogging && logDebug('Needed to make directory', dir)
-      await ensureDir(dir)
-    }
-  }
-
-  const data = toJSON ? JSON.stringify(dataRaw, null, cleanJSON ? 2 : null) : dataRaw
-  const success = await fs.promises.writeFile(path, data, encoding)
-  doLogging && logDebug('Wrote cache to file', success)
-  return success
-}
-
-/** Call readCache() with doLogging = true. */
-export const readCacheLogged = partialRight(readCache, true)
-
-/** Call writeCache() with doLogging = true. */
-export const writeCacheLogged = partialRight(writeCache, true)
-
-/** Call readCacheData() with doLogging = true. */
-export const readCacheDataLogged = partialRight(readCacheData, true)
-
-/**
- * Retrieves config data from ~/.config/<progname> and creates a new file
- * if it doesn't exist.
- */
-export const getUserConfig = async (dirname, defaults = {}, doLogging = true) => {
-  const dir = `${settings.configDir}${dirname}`
-  const path = `${dir}/config.json`
-  const configDefaults = cloneDeep(defaults)
-  doLogging && logDebug('Reading config from file', path)
-  
-  try {
-    await fs.promises.access(dir)
+    value = await fs.readFile(`${filepath}`, 'utf8')
   }
   catch (err) {
-    doLogging && logDebug('Needed to make directory', dir)
-    await ensureDir(dir)
-  }
-
-  let configData
-  try {
-    configData = require(path)
-    return configData
-  }
-  catch (err) {
-    // Create new file with defaults if the file wasn't found.
-    if (err.code === 'MODULE_NOT_FOUND') {
-      const success = await fs.promises.writeFile(path, JSON.stringify(configDefaults, null, 2), 'utf8')
-      doLogging && logDebug('Wrote config to file', success)
-      return configDefaults
+    if (err.code === 'ENOENT') {
+      return null
     }
-    // Else, pass on the error we just got.
-    else  {
+    else {
       throw err
     }
   }
+  return new Date(value)
+}
+
+/**
+ * Reads a program's config file.
+ * 
+ * Either a .js or .json file is read (in that order). If 'cfgFile' is provided,
+ * it will be used instead.
+ */
+export const readConfig = async (progname, defaultData, options, pathOverride = null) => {
+  const configJS = getConfigPath(progname, `config.js`)
+  const configJSON = getConfigPath(progname, `config.json`)
+
+  if (pathOverride) {
+    const parsed = path.parse(pathOverride)
+    return readConfigFile(pathOverride, defaultData, { ...options, type: parsed.ext.slice(1) })
+  }
+  
+  if (options?.type) {
+    return readConfigFile(getConfigPath(progname, `config.${options.type}`), defaultData, options)
+  }
+
+  if (await fileExists(configJS)) {
+    return readConfigFile(configJS, defaultData, { ...options, type: 'js' })
+  }
+
+  return readConfigFile(configJSON, defaultData, { ...options, type: 'json' })
+}
+
+/**
+ * Reads a config file and returns its contents.
+ * 
+ * This takes either a .js file or a .json file. If a .js file is passed, it's required()
+ * and its result returned. .json files are passed through JSON.parse().
+ * 
+ * Throws if an error occurs other than the file not existing.
+ */
+export const readConfigFile = async (filepath, defaultData = {}, userOptions = {}) => {
+  const defaultOptions = { encoding: 'utf8', doLogging: false, logFn: null, type: null, required: false, create: true }
+  const options = { ...defaultOptions, ...userOptions }
+  if (!options.type) throw new Error('readConfigFile(): config type needed')
+  if (options.type === 'js') {
+    const [data, exists] = requireDataFallback(filepath, defaultData)
+    if (!exists && options.required) {
+      throw new Error(`readConfigFile(): config file does not exist: ${filepath}`)
+    }
+    if (!exists && options.create) {
+      await ensureDir(path.dirname(filepath))
+      await fs.writeFile(filepath, outputJS(data), options.encoding)
+    }
+    return data
+  }
+  if (options.type === 'json') {
+    const [data, exists] = await readDataFallback(filepath, defaultData, options.encoding)
+    if (!exists && options.required) {
+      throw new Error(`readConfigFile(): config file does not exist: ${filepath}`)
+    }
+    if (!exists && options.create) {
+      await ensureDir(path.dirname(filepath))
+      await fs.writeFile(filepath, JSON.stringify(data, null, 2), options.encoding)
+    }
+    return data
+  }
+  throw new Error(`readConfigFile(): invalid config type: ${options.type}`)
+}
+
+/** Opens a program's cache file. */
+export const openCache = async (progname, defaultData, options, pathOverride = null) => {
+  return await openCacheFile(pathOverride ? pathOverride : getCachePath(progname, `cache.json`), defaultData, options)
+}
+
+/**
+ * Opens a cache file and returns an object that can be used to manipulate it.
+ * 
+ * The object has three items:
+ * 
+ *     data     reference to the data object
+ *     read()   reads data from the file
+ *     write()  writes current data to the file
+ */
+export const openCacheFile = async (filepath, defaultData = {}, userOptions = {}) => {
+  const defaultOptions = { encoding: 'utf8', doLogging: false, logFn: null, ensureCacheLock: true, lockOptions: {} }
+  const options = { ...defaultOptions, ...userOptions }
+  const state = {
+    cacheData: null,
+    firstRead: true
+  }
+  const filedir = path.dirname(filepath)
+  const log = getLogFn(options.doLogging, options.logFn)
+
+  // Ensure the directory exists.
+  await ensureDir(filedir)
+
+  // Check if we can get a lock on the directory.
+  let releaseWriteLock
+  let isReadOnly
+  try {
+    releaseWriteLock = await lockDirectory(filedir, options.lockOptions)
+    isReadOnly = false
+  }
+  catch (err) {
+    if (err.code === 'ELOCKED') {
+      isReadOnly = true
+    }
+    else {
+      throw err.code
+    }
+  }
+
+  const read = async () => {
+    log(`Reading cache from file${!state.firstRead ? ' (data in memory is overwritten):' : ''}`, filepath)
+    state.firstRead = false
+
+    const [data, exists] = await readDataFallback(filepath, defaultData, options.encoding)
+    if (!exists) {
+      log(`Cache file does not exist:`, filepath)
+    }
+    state.cacheData = data
+  }
+
+  const write = async () => {
+    if (isReadOnly) {
+      throw new Error(`Can't write to cache file as the file is locked:`, filepath)
+    }
+    log('Writing cache to file:', filepath)
+    await ensureDir(filedir)
+    await fs.writeFile(filepath, JSON.stringify(state.cacheData, null, 2), options.encoding)
+    return true
+  }
+
+  await read()
+
+  return {
+    data: state.cacheData,
+    filepath: filepath,
+    releaseWriteLock,
+    isReadOnly,
+    read,
+    write
+  }
+}
+
+/**
+ * Locks a given directory and returns a release function.
+ * 
+ * This is used to ensure that only one process is currently working with a given directory,
+ * and can be used to ensure that a program is only running one instance.
+ * 
+ * If a given directory is already locked, this will throw an ELOCKED error.
+ * 
+ * The release function does not necessarily need to be manually called;
+ * the lock will be released on program exit automatically.
+ */
+export const lockDirectory = async (dirpath, userOpts = {}) => {
+  const pathResolved = path.resolve(dirpath)
+  const opts = { ...settings.lockfile, lockfilePath: `${pathResolved}/__dir.lock`, ...userOpts }
+  const releaseFn = lockfile.lock(dirpath, opts)
+  return releaseFn
 }

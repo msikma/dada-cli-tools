@@ -2,7 +2,7 @@
 // © MIT license
 
 import { spawn } from 'child_process'
-import { splitCommand } from 'cmd-tokenize'
+import { splitCommand, util } from 'cmd-tokenize'
 
 /** Default options for execCmd(). */
 const defaultOpts = {
@@ -27,6 +27,28 @@ const encode = (buffer, encoding) => {
 }
 
 /**
+ * Runs execCmd() and parses the result as JSON.
+ * 
+ * Defaults to UTF-8 as the encoding.
+ */
+export const execGetJSON = async (cmd, userOpts, userSpawnOpts) => {
+  const result = await execCmd(cmd, { encoding: 'utf8', ...userOpts }, userSpawnOpts)
+  const data = JSON.parse(result.stdout)
+  return data
+}
+
+/**
+ * Runs execCmd() with 'logged' set to true.
+ */
+export const execLog = async (cmd, userOpts, userSpawnOpts) => {
+  return await execCmd(cmd, { ...userOpts, logged: true }, userSpawnOpts)
+}
+
+const whichCmd = async cmd => {
+  const res = await execCmd(`command -v ${util.escapeArgument(cmd)}`)
+}
+
+/**
  * Runs an external command and returns an object with the result and exit code.
  *
  * This allows for an external command to be run as a string,
@@ -43,6 +65,7 @@ export const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((
   const output = {
     stdout: [],
     stderr: [],
+    stdall: [],
     code: null,
     signal: null,
     error: null
@@ -51,6 +74,7 @@ export const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((
   const finalize = () => {
     return {
       ...output,
+      stdall: encode(Buffer.concat(output.stdall), encoding),
       stdout: encode(Buffer.concat(output.stdout), encoding),
       stderr: encode(Buffer.concat(output.stderr), encoding)
     }
@@ -59,11 +83,13 @@ export const execCmd = (cmd, userOpts = {}, userSpawnOpts = {}) => new Promise((
   proc.stdout.on('data', (data) => {
     logOutFn && logged && logOutFn(data)
     output.stdout.push(data)
+    output.stdall.push(data)
   })
 
   proc.stderr.on('data', (data) => {
     logErrFn && logged && logErrFn(data)
     output.stderr.push(data)
+    output.stdall.push(data)
   })
 
   proc.on('close', (code, signal) => {

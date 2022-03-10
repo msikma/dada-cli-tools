@@ -1,9 +1,54 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
-import { isFunction, uniq } from 'lodash'
+import { uniq } from 'lodash'
 import TurndownService from 'turndown'
 import cheerio from 'cheerio'
+import { isFunction } from './data'
+
+const htmlElements = [
+  'a',        'abbr',     'acronym',    'address',  'applet',
+  'area',     'article',  'aside',      'audio',    'b',
+  'base',     'basefont', 'bdi',        'bdo',      'bgsound',
+  'big',      'blink',    'blockquote', 'body',     'br',
+  'button',   'canvas',   'caption',    'center',   'cite',
+  'code',     'col',      'colgroup',   'content',  'data',
+  'datalist', 'dd',       'decorator',  'del',      'details',
+  'dfn',      'dir',      'div',        'dl',       'dt',
+  'element',  'em',       'embed',      'fieldset', 'figcaption',
+  'figure',   'font',     'footer',     'form',     'frame',
+  'frameset', 'h1',       'h2',         'h3',       'h4',
+  'h5',       'h6',       'head',       'header',   'hgroup',
+  'hr',       'html',     'i',          'iframe',   'img',
+  'input',    'ins',      'isindex',    'kbd',      'keygen',
+  'label',    'legend',   'li',         'link',     'listing',
+  'main',     'map',      'mark',       'marquee',  'menu',
+  'menuitem', 'meta',     'meter',      'nav',      'nobr',
+  'noframes', 'noscript', 'object',     'ol',       'optgroup',
+  'option',   'output',   'p',          'param',    'plaintext',
+  'pre',      'progress', 'q',          'rp',       'rt',
+  'ruby',     's',        'samp',       'script',   'section',
+  'select',   'shadow',   'small',      'source',   'spacer',
+  'span',     'strike',   'strong',     'style',    'sub',
+  'summary',  'sup',      'table',      'tbody',    'td',
+  'template', 'textarea', 'tfoot',      'th',       'thead',
+  'time',     'title',    'tr',         'track',    'tt',
+  'u',        'ul',       'var',        'video',    'wbr',
+  'xmp'
+]
+const blockElements = [
+  'address',    'article',  'aside',
+  'blockquote', 'details',  'dialog',
+  'dd',         'div',      'dl',
+  'dt',         'fieldset', 'figcaption',
+  'figure',     'footer',   'form',
+  'h1',         'h2',       'h3',
+  'h4',         'h5',       'h6',
+  'header',     'hgroup',   'hr',
+  'li',         'main',     'nav',
+  'ol',         'p',        'pre',
+  'section',    'table',    'ul'
+]
 
 /**
  * Runs through the anchors in a Cheerio object and ensures they are absolute.
@@ -103,26 +148,17 @@ export const htmlToMarkdown = (html, { removeEmpty = false, removeScript = true,
  * Returns whether a string is likely HTML or not.
  */
 export const isHTML = (string) => {
-  const items = [
-    string.indexOf('<p>') > 0,
-    string.indexOf('<strong>') > 0,
-    string.indexOf('<img') > 0,
-    string.indexOf('<span') > 0,
-    string.indexOf('<div') > 0,
-    string.indexOf('<br /') > 0,
-    string.indexOf('<br/') > 0,
-    string.indexOf('<br>') > 0,
-    string.indexOf('href="') > 0
-  ]
-  return items.indexOf(true) > -1
+  for (const el of htmlElements) {
+    if (string.includes(`<${el}>`)) {
+      return true
+    }
+  }
+  return false
 }
 
-/** List of block elements. (Non-exhaustive, but it works well enough for most cases.) */
-const blockEls = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul', 'pre', 'address', 'blockquote', 'dl', 'div', 'fieldset', 'form', 'noscript', 'table']
-
 /** Converts block elements to linebreaks. Useful for cleaning up HTML before converting to plain text. */
-export const blockElsToLb = ($text) => {
-  for (let el of blockEls) {
+export const blockElementsToLinebreaks = ($text) => {
+  for (const el of blockElements) {
     $text.find(el).before('\n')
   }
   $text.find('br').replaceWith('\n')
@@ -132,9 +168,9 @@ export const blockElsToLb = ($text) => {
 /**
  * Finds a tag with a specific content.
  */
-export const findTagContent = ($, tag, contentHint) => {
+export const findTagWithContent = ($, tag, contentHint) => {
   return $(tag)
-    .filter((_, el) => ~$(el).html().indexOf(contentHint))
+    .filter((_, el) => $(el).html().includes(contentHint))
     .map((_, el) => $(el).html())
     .get()[0]
 }
@@ -145,7 +181,12 @@ export const findTagContent = ($, tag, contentHint) => {
 export const getImagesFromHTML = (html) => {
   const $ = cheerio.load(`<div id="dada-cli-tools-cheerio-wrapper">${html}</div>`)
   const $html = $('#dada-cli-tools-cheerio-wrapper')
-  return uniq($html
-    .find('img').get()
-    .map(i => $(i).attr('src')))
+  
+  const srcList = $html.find('img').get()
+    .map(i => $(i).attr('src'))
+  
+  const dataSrcList = $html.find('img').get()
+    .map(i => $(i).attr('data-src'))
+  
+  return uniq([...srcList, ...dataSrcList].filter(i => i))
 }

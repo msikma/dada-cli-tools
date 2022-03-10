@@ -41,6 +41,20 @@ export const outputJSON = obj => {
   return JSON.stringify(obj)
 }
 
+/** Outputs data as JSON-like JS object with module.exports prefix. */
+export const outputJS = obj => {
+  const data = util.inspect(obj, {
+    colors: false,
+    depth: null,
+    showHidden: false,
+    maxArrayLength: null,
+    maxStringLength: null,
+    breakLength: 140,
+    compact: 4
+  })
+  return `module.exports = ${data}\n`
+}
+
 /** Outputs data formatted for the terminal with color. */
 export const outputTerminal = obj => {
   // Use the util.inspect() method to log the entire object with color.

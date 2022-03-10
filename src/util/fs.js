@@ -4,17 +4,17 @@
 import path from 'path'
 import os from 'os'
 import filesize from 'filesize'
+import fg from 'fast-glob'
 import { promises as fs, constants, readFileSync } from 'fs'
-import mkdirp from 'mkdirp'
 import process from 'process'
 
 /** Max number of times we'll try to figure out a different filename in writeFileSafely(). */
-const MAX_FILENAME_RETRIES = 99
+const MAX_FILENAME_RETRIES = 999
 
 /** Returns the formatted size of a file. */
-export const formatFilesize = async (filepath, opts = {}) => {
+export const getFilesize = async (filepath, opts = {}) => {
   const stat = await fs.stat(filepath)
-  return formatBytes(stat.size, opts)
+  return { formatted: formatBytes(stat.size, opts), bytes: stat.size }
 }
 
 /** Returns a formatted version of a given number of bytes. */
@@ -50,68 +50,109 @@ export const resolveTilde = (filepath, deslash = true, resolve = true, homedir =
  */
 export const changeExtension = (filename, ext) => {
   const parsed = path.parse(filename)
-  return `${parsed.name}.${ext}`
+  const extension = ext.startsWith('.') ? ext.slice(1) : ext
+  return `${parsed.name}.${extension}`
 }
 
 /**
- * Determines a filename that does not exist yet.
+ * Checks a given filename to see if it exists, and if it does, return a different suggestion.
+ * 
+ * This also returns a boolean for whether or not the original filename existed.
  *
- * E.g. if 'file.jpg' exists, this might return 'file1.jpg' or 'file22.jpg'.
- * TODO: this should be simplified, by getting a full list of files and then
- * determining the new name once, rather than checking each possibility.
+ * E.g. if 'file.jpg' exists, this might return 'file 1.jpg' or 'file 22.jpg'.
  */
-export const getSafeFilename = async (target, separator = '', allowSafeFilename = true, limit = MAX_FILENAME_RETRIES) => {
-  const { name, ext } = path.parse(target)
+export const getUnusedFilename = async (filepath, { separator = ' ', limit = 999 } = {}) => {
+  const full = path.resolve(filepath)
+  const parsed = path.parse(full)
+  const prefix = filepath.replace(parsed.base, '')
+  
+  if (!(await fileExists(full))) {
+    return [filepath, false]
+  }
 
-  let targetName = { name, suffix: 0 }, targetNameStr
+  const files = toKeys(await fg(`${parsed.name}${separator}*${parsed.ext}`, { cwd: parsed.dir }))
+
+  let suffix = 0
+
   while (true) {
-    // Increment the name suffix and see if we can create this file.
-    targetNameStr = `${targetName.name}${separator}${targetName.suffix > 0 ? targetName.suffix : ''}.${ext}`
+    const name = `${parsed.name}${separator}${++suffix}${parsed.ext}`
+    if (!files[name]) {
+      return [`${prefix}${name}`, true]
+    }
 
-    if (await fileExists(targetNameStr)) {
-      targetName.suffix += 1
+    if (suffix > limit) {
+      break
+    }
+  }
 
-      // If we've tried too many times, fail and return information.
-      if (allowSafeFilename || targetName.suffix >= limit) {
-        return {
-          success: false,
-          attempts: targetName.suffix,
-          separator: separator,
-          passedFilename: target,
-          targetFilename: targetNameStr,
-          hasModifiedFilename: target !== targetNameStr
-        }
-      }
+  return [null, true]
+}
+
+/**
+ * Writes a file "safely" - if the target filename exists, a different name will be chosen.
+ * 
+ * Uses the same arguments as fs.writeFile(). If 'errorOnExisting' is true, this function
+ * throws if the file already existed instead of writing to a new file.
+ */
+export const writeFileSafely = async (target, content, options, { errorOnExisting = false } = {}) => {
+  const [name, existed] = await getUnusedFilename(target)
+  if (existed && errorOnExisting) {
+    throw new Error('writeFileSafely: file existed and errorOnExisting is true')
+  }
+  if (name == null) {
+    throw new Error('writeFileSafely: could not find an unused filename')
+  }
+
+  await fs.writeFile(name, content, options)
+  return [name, existed]
+}
+
+/**
+ * Returns the require() result of a Javascript file, or a fallback object if it doesn't exist.
+ * 
+ * Also returns a boolean indicating whether the file existed or not.
+ * 
+ * Errors other than the file not existing are bubbled.
+ */
+export const requireDataFallback = (filepath, defaultData) => {
+  try {
+    const data = require(filepath)
+    return [data, true]
+  }
+  catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      return [defaultData, false]
     }
     else {
-      return {
-        success: true,
-        attempts: targetName.suffix,
-        separator: separator,
-        passedFilename: target,
-        targetFilename: targetNameStr,
-        hasModifiedFilename: target !== targetNameStr
-      }
+      throw err
     }
   }
 }
 
-/** Writes a file "safely" - if the target filename exists, a different name will be chosen. */
-export const writeFileSafely = async (target, content, options) => {
-  const safeFn = await getSafeFilename(target)
-  if (!safeFn.success) {
-    return safeFn
+/**
+ * Returns either the JSON data of a file, or a fallback object if it doesn't exist.
+ * 
+ * Also returns a boolean indicating whether the file existed or not.
+ * 
+ * Errors other than the file not existing are bubbled.
+ */
+export const readDataFallback = async (filepath, defaultData, encoding) => {
+  try {
+    const data = await fs.readFile(filepath, encoding)
+    return [JSON.parse(data), true]
   }
-
-  const result = await fs.writeFile(safeFn.targetFilename, content, options)
-  return {
-    ...safeFn,
-    success: result
+  catch (err) {
+    if (err.code === 'ENOENT') {
+      return [defaultData, false]
+    }
+    else {
+      throw err
+    }
   }
 }
 
-/** Checks whether we can access (read, modify) a path. */
-export const canAccess = async (filepath) => {
+/** Checks whether we can access (read and modify) a path. */
+export const fileIsWritable = async (filepath) => {
   try {
     // If access is possible, this will return null. Failure will throw.
     return await fs.access(filepath, constants.F_OK | constants.W_OK) == null
@@ -133,7 +174,13 @@ export const fileExists = async (filepath) => {
 
 /** Ensures that a directory exists. Returns a promise. */
 export const ensureDir = async (filepath) => {
-  return !!(await fs.mkdir(filepath, { recursive: true }))
+  try {
+    await fs.mkdir(filepath, { recursive: true })
+    return true
+  }
+  catch (err) {
+    return false
+  }
 }
 
 /** Loads a JSON file, either sync or async. */
@@ -145,7 +192,7 @@ export const readJSON = (filepath, async = true, encoding = 'utf8') => {
 }
 
 /** Returns the name of the currently running program. */
-export const progName = () => (
+export const getProgname = () => (
   path.basename(process.argv[1])
 )
 

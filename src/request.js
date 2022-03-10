@@ -9,7 +9,7 @@ import chalk from 'chalk'
 import stream from 'stream'
 import Url from 'url-parse'
 
-import { getSafeFilename, fileExists } from './util/fs'
+import { getUnusedFilename, fileExists } from './util/fs'
 import { logDebug } from './log'
 
 // Allow the stream pipeline function to return Promises.
@@ -81,7 +81,8 @@ export const downloadFileLogged = (url, target, opts = {}, customOpts = {}) => {
  */
 export const downloadFile = async (url, target, opts = {}, customOpts = {}) => {
   const { logFn, cleanupOnError = true } = opts
-  const safeFn = await getSafeFilename(target, '', opts.allowRenaming)
+  const safeFnRes = await getUnusedFilename(target, '', opts.allowRenaming)
+  const safeFn = { targetFilename: safeFnRes[0], success: safeFnRes[0] != null }
   const { targetFilename } = safeFn
 
   try {

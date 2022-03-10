@@ -3,13 +3,10 @@
 
 import chalk from 'chalk'
 import util from 'util'
-import { isNumber, isString } from 'lodash'
 
 import { noop } from '../util/misc'
-import { progName } from '../util/fs'
-
-// Export table logging routines.
-export { logTable } from './table'
+import { isNumber, isString } from '../util/data'
+import { getProgname } from '../util/fs'
 
 // Default logging depth.
 export const logDepth = 6
@@ -55,7 +52,7 @@ export const setVerbosity = (verbosity) => {
  * TODO: add output customizations.
  */
 export const inspect = (obj) => {
-  return util.inspect(obj, { colors: true, depth: logDepth })
+  return util.inspect(obj, { colors: true, depth: logDepth, maxArrayLength: 1024 })
 }
 
 /**
@@ -138,7 +135,7 @@ export const getLogFn = (doLogging, logFn) => {
 /** Exits the program with an error. */
 export const die = (...segments) => {
   if (segments.length) {
-    logSegments([`${progName()}:`, ...segments], console.error, false, chalk.red)
+    logSegments([`${getProgname()}:`, ...segments], console.error, false, chalk.red)
   }
   exit(1)
 }

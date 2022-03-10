@@ -1,12 +1,54 @@
 // dada-cli-tools - Libraries for making CLI programs <https://github.com/msikma/dada-cli-tools>
 // © MIT license
 
+import path from 'path'
 import { CookieJar } from 'tough-cookie'
 import { existsSync } from 'fs'
 import FileCookieStore from 'file-cookie-store-sync'
 
+import { wrapInArray } from './util/data'
 import { log, die } from './log'
-import { dirName, ensureDir, resolveTilde } from './util/fs'
+import { ensureDir, resolveTilde } from './util/fs'
+
+/**
+ * Promisified version of tough.Store.getAllCookies() for our internal cookies objects.
+ */
+const getCookies = cookieObj => new Promise((resolve, reject) => {
+  cookieObj.jar.store.getAllCookies((err, cookies) => {
+    if (err) {
+      return reject(err)
+    }
+    return resolve(cookies)
+  })
+})
+
+/**
+ * Promisified version of tough.Store.putCookie() for our internal cookies objects.
+ */
+const putCookie = (cookieObj, cookie) => new Promise((resolve, reject) => {
+  cookieObj.jar.store.putCookie(cookie, err => {
+    if (err) {
+      return reject(err)
+    }
+    return resolve()
+  })
+})
+
+/**
+ * Merges together multiple cookie objects into one.
+ * 
+ * This can be used to load cookies from multiple different files.
+ */
+const mergeCookieObjects = async cookieObjs => {
+  const target = cookieObjs[0]
+  for (const cookieObj of cookieObjs.slice(1)) {
+    const cookies = await getCookies(cookieObj)
+    for (const cookie of cookies) {
+      await putCookie(target, cookie)
+    }
+  }
+  return target
+}
 
 /**
  * Loads cookies from a specified cookies.txt - and errors out, exiting the process
@@ -30,7 +72,7 @@ export const loadCookiesLogged = async (cookiePath, createNew = false, failQuiet
     }
     catch (e) {
       if (~String(e.error).indexOf('Could not find cookies file')) {
-        log('Could not find cookies file:', cookiePath)
+        log('Could not find cookies file(s):', wrapInArray(cookiePath).join(', '))
       }
       else {
         log(String(e.error))
@@ -41,31 +83,52 @@ export const loadCookiesLogged = async (cookiePath, createNew = false, failQuiet
 )
 
 /**
- * Loads cookies from a specified cookies.txt file and loads them into
- * a jar so that we can make requests with them.
+ * Loads cookies from a specified cookies.txt file into a jar object.
+ * 
+ * Cookies from multiple files can be loaded by passing an array for 'cookiePath'.
  */
 export const loadCookies = (cookiePath, createNew = false, failQuietly = false) => (
   new Promise(async (resolve, reject) => {
-    try {
-      let madeNew = false
+    if (!cookiePath || cookiePath.length === 0) {
+      return reject({ error: new Error(`No cookie path passed`) })
+    }
+    const cookiePaths = wrapInArray(cookiePath)
 
-      // If the cookie file doesn't exist we could create a new file.
-      if (!existsSync(cookiePath)) {
-        if (failQuietly) {
-          // Do nothing if the cookie jar is optional.
-          return resolve({})
+    try {
+      const cookieObjs = []
+
+      let madeNew
+      for (const cookieFile of cookiePaths) {
+        madeNew = false
+        try {
+          // If the cookie file doesn't exist we could create a new file.
+          if (!existsSync(cookieFile)) {
+            if (failQuietly) {
+              // Do nothing if the cookie jar is optional.
+              return resolve({})
+            }
+            if (!createNew) {
+              return reject({ error: new Error(`Could not find cookies file: ${cookieFile}`) })
+            }
+            // Create the directory so we can make a new file.
+            await ensureDir(path.dirname(cookieFile))
+            madeNew = true
+          }
+          // Cookies must be in Netscape cookie file format.
+          const cookieStore = new FileCookieStore(cookieFile, { no_file_error: true })
+          const jar = new CookieJar(cookieStore)
+          const obj = { jar, file: jar.store.file, madeNew }
+          cookieObjs.push(obj)
         }
-        if (!createNew) {
-          return reject({ error: new Error(`Could not find cookies file: ${cookiePath}`) })
+        catch (error) {
+          reject({ error })
         }
-        // Create the directory so we can make a new file.
-        await ensureDir(dirName(cookiePath))
-        madeNew = true
       }
-      // Cookies must be in Netscape cookie file format.
-      const cookieStore = new FileCookieStore(cookiePath, { no_file_error: true })
-      const jar = new CookieJar(cookieStore)
-      resolve({ jar, file: jar.store.file, madeNew })
+      const madeAnyNew = cookieObjs.map(obj => obj.madeNew).includes(true)
+      if (cookieObjs.length === 1) {
+        resolve({...cookieObjs[0], madeNew})
+      }
+      resolve({...(await mergeCookieObjects(cookieObjs)), madeNew: madeAnyNew})
     }
     catch (error) {
       reject({ error })

@@ -3,12 +3,47 @@
 
 import escape from 'markdown-escape'
 
+const timeDivisions = [
+  { amount: 60, name: 'seconds' },
+  { amount: 60, name: 'minutes' },
+  { amount: 24, name: 'hours' },
+  { amount: 7, name: 'days' },
+  { amount: 4.34524, name: 'weeks' },
+  { amount: 12, name: 'months' },
+  { amount: Number.POSITIVE_INFINITY, name: 'years' }
+]
+
 /**
  * Prevents a string from activating Markdown features.
  */
 export const escapeMarkdown = (md) => (
   escape(md)
 )
+
+/** Makes a date parseable by `date "%a, %b %d %Y %X %z"`. */
+export const makeParseableDate = (d = new Date()) => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const day = days[d.getUTCDay() - 1]
+  const date = d.getUTCDate()
+  const month = months[d.getUTCMonth()]
+  const year = d.getUTCFullYear()
+  const time = d.toTimeString().split(' ')[0]
+  const offset = d.toTimeString().split(' ')[1].slice(3)
+  return `${day}, ${month} ${date} ${year} ${time} ${offset}`
+}
+
+/** Returns a relative time string. */
+export const getRelativeTime = (tsA, tsB = new Date(), formatter = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' })) => {
+  let seconds = (tsA - tsB) / 1000
+  for (const division of timeDivisions) {
+    if (Math.abs(seconds) < division.amount) {
+      return formatter.format(Math.round(seconds), division.name)
+    }
+    seconds /= division.amount
+  }
+  return null
+}
 
 /**
  * Removes extra empty lines by trimming every line, then removing the empty strings.
@@ -100,6 +135,11 @@ export const limitStringParagraph = (maxLength = 700, errorRatio = 100) => (desc
     }
   }
 }
+
+/** Pads a number with zeroes based on a maximum value. */
+export const zeroPadMax = (a, z) => (
+  String(a).padStart(Math.ceil(Math.log10(z + 1)), '0')
+)
 
 /**
  * Cuts a long description down to a specific length, removing whole sentences.
